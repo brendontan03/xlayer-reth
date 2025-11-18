@@ -27,6 +27,12 @@ build:
 build-maxperf:
     cargo build --profile maxperf --features jemalloc
 
+install:
+    cargo install --path crates/node --bin xlayer-reth-node --force --locked --profile release
+
+install-maxperf:
+    cargo install --path crates/node --bin xlayer-reth-node --force --locked --profile maxperf --features jemalloc
+
 clean:
     cargo clean
 

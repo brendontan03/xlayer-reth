@@ -40,6 +40,9 @@ reqwest.workspace = true
 # rpc
 jsonrpsee.workspace = true
 
+# alloy
+alloy-primitives.workspace = true
+
 # misc
 clap.workspace = true
 tracing.workspace = true
