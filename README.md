@@ -53,15 +53,42 @@ Maximum performance build:
 
 ## Building
 
+We use [just](https://github.com/casey/just) as our command runner. Install it with:
+
 ```bash
+cargo install just
+```
+
+### Build Commands
+
+```bash
+# List all available commands
+just
+
 # Standard release build
-cargo build --release
+just build
 
-# Maximum performance build
-cargo build --profile maxperf
+# Maximum performance build (with jemalloc)
+just build-maxperf
 
-# Check the project
-cargo check -p xlayer-reth-node
+# Clean build artifacts
+just clean
+```
+
+### Development Commands
+
+```bash
+# Run all checks (format + clippy + tests)
+just check
+
+# Run tests
+just test
+
+# Auto-fix formatting and clippy issues
+just fix
+
+# Watch mode - auto-run tests on file changes
+just watch-test
 ```
 
 ## Repository
