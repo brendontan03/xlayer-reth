@@ -11,7 +11,9 @@ use reth::{
 };
 use reth_optimism_cli::{chainspec::OpChainSpecParser, Cli};
 use reth_optimism_node::{args::RollupArgs, OpNode};
-use tracing::info;
+use std::path::Path;
+use tracing::{error, info};
+use xlayer_innertx::utils::initialize;
 
 pub const XLAYER_RETH_CLIENT_VERSION: &str = concat!("xlayer/v", env!("CARGO_PKG_VERSION"));
 
@@ -83,6 +85,18 @@ fn main() {
 
             let op_node = OpNode::new(args.rollup_args.clone());
 
+            let data_dir = builder.config().datadir();
+            if args.xlayer_args.enable_inner_tx {
+                let db = data_dir.db();
+                let db_path = db.parent().unwrap_or_else(|| Path::new("/")).to_str().unwrap();
+                match initialize(db_path) {
+                    Ok(_) => info!(target: "reth::cli", "xlayer db initialized"),
+                    Err(e) => {
+                        error!(target: "reth::cli", "xlayer db failed to initialize {:#?}", e)
+                    }
+                }
+            }
+
             let NodeHandle { node: _node, node_exit_future } = builder
                 .with_types_and_provider::<OpNode, BlockchainProvider<_>>()
                 .with_components(op_node.components())
@@ -94,14 +108,17 @@ fn main() {
                     // - Inner transaction tracking
                     Ok(())
                 })
-                // TODO: Add XLayer ExExes here
-                // .install_exex_if(
-                //     args.xlayer_args.enable_inner_tx,
-                //     "xlayer-innertx",
-                //     move |ctx| async move {
-                //         Ok(xlayer_innertx_exex(ctx))
-                //     },
-                // )
+                .install_exex_if(
+                    args.xlayer_args.enable_inner_tx,
+                    "xlayer-innertx",
+                    move |_ctx| async move {
+                        Ok(async {
+                            println!("Inner Tx!!!");
+
+                            loop {}
+                        })
+                    },
+                )
                 .extend_rpc_modules(move |_ctx| {
                     // TODO: Add XLayer RPC extensions here
                     // - Bridge intercept RPC methods

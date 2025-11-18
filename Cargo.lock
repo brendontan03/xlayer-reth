@@ -3578,6 +3578,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
+ "rustc-std-workspace-alloc",
 ]
 
 [[package]]
@@ -9644,6 +9645,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
 
 [[package]]
+name = "rustc-std-workspace-alloc"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9d441c3b2ebf55cebf796bfdc265d67fa09db17b7bb6bd4be75c509e1e8fec3"
+
+[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12281,6 +12288,9 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "eyre",
+ "hashbrown 0.14.5",
+ "once_cell",
  "reth-db",
  "reth-revm",
  "revm-context-interface",
@@ -12324,6 +12334,7 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+ "xlayer-innertx",
 ]
 
 [[package]]
