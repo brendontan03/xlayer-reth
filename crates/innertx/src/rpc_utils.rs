@@ -17,12 +17,10 @@ use tokio::{
     time::{interval, sleep_until, Duration, Instant, MissedTickBehavior},
 };
 
-use reth_ethereum::provider::TransactionsProvider;
+use reth_provider::TransactionsProvider;
 use reth_rpc::RpcTypes;
 use reth_rpc_eth_api::{helpers::EthCall, EthApiTypes};
 use reth_storage_api::BlockIdReader;
-
-use xlayer_legacy_rpc::{route_by_condition, should_route_to_legacy, LegacyRpc};
 
 use crate::{
     db_utils::{read_table_block, read_table_tx},
@@ -66,7 +64,7 @@ pub struct XlayerExt<T> {
 #[async_trait]
 impl<T, Net> XlayerExtApiServer<Net> for XlayerExt<T>
 where
-    T: EthCall + LegacyRpc + EthApiTypes<NetworkTypes = Net> + Send + Sync + 'static,
+    T: EthCall + EthApiTypes<NetworkTypes = Net> + Send + Sync + 'static,
     Net: RpcTypes + Send + Sync + 'static,
 {
     async fn get_internal_transactions(
@@ -88,12 +86,12 @@ where
         match self.backend.provider().transaction_by_hash(hash) {
             Ok(Some(_)) => {}
             Ok(None) => {
-                route_by_condition!(
-                    "eth_getInternalTransactions",
-                    self.backend.legacy_rpc_client().is_some(),
-                    tx_hash,
-                    self.backend.legacy_rpc_client().unwrap().get_internal_transactions(tx_hash)
-                );
+                // route_by_condition!(
+                //     "eth_getInternalTransactions",
+                //     self.backend.legacy_rpc_client().is_some(),
+                //     tx_hash,
+                //     self.backend.legacy_rpc_client().unwrap().get_internal_transactions(tx_hash)
+                // );
                 return Err(ErrorObjectOwned::owned(-32000, "Transaction not found", None::<()>));
             }
             Err(_) => return Err(ErrorObjectOwned::owned(-32603, "Internal error", None::<()>)),
@@ -139,12 +137,12 @@ where
         block_number: BlockNumberOrTag,
     ) -> RpcResult<HashMap<String, Vec<InternalTransaction>>> {
         // XLayer: Route to legacy RPC if block number is below cutoff
-        route_by_condition!(
-            "eth_getBlockInternalTransactions",
-            should_route_to_legacy(self.backend.legacy_rpc_client(), block_number),
-            block_number,
-            self.backend.legacy_rpc_client().unwrap().get_block_internal_transactions(block_number)
-        );
+        // route_by_condition!(
+        //     "eth_getBlockInternalTransactions",
+        //     should_route_to_legacy(self.backend.legacy_rpc_client(), block_number),
+        //     block_number,
+        //     self.backend.legacy_rpc_client().unwrap().get_block_internal_transactions(block_number)
+        // );
 
         let hash: FixedBytes<32> = match self
             .backend

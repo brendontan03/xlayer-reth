@@ -2,8 +2,13 @@
 
 mod args_xlayer;
 
+use std::path::Path;
+use std::sync::Arc;
+
 use args_xlayer::XLayerArgs;
 use clap::Parser;
+use tracing::{error, info};
+
 use reth::{
     builder::{EngineNodeLauncher, Node, NodeHandle, TreeConfig},
     providers::providers::BlockchainProvider,
@@ -11,9 +16,12 @@ use reth::{
 };
 use reth_optimism_cli::{chainspec::OpChainSpecParser, Cli};
 use reth_optimism_node::{args::RollupArgs, OpNode};
-use std::path::Path;
-use tracing::{error, info};
-use xlayer_innertx::{db_utils::initialize, exex_utils::post_exec_exex};
+
+use xlayer_innertx::{
+    db_utils::initialize,
+    exex_utils::post_exec_exex,
+    rpc_utils::{XlayerExt, XlayerExtApiServer},
+};
 
 pub const XLAYER_RETH_CLIENT_VERSION: &str = concat!("xlayer/v", env!("CARGO_PKG_VERSION"));
 
@@ -113,11 +121,18 @@ fn main() {
                     "xlayer-innertx",
                     move |ctx| async move { Ok(post_exec_exex(ctx)) },
                 )
-                .extend_rpc_modules(move |_ctx| {
+                .extend_rpc_modules(move |ctx| {
                     // TODO: Add XLayer RPC extensions here
                     // - Bridge intercept RPC methods
                     // - Apollo RPC methods
                     // - Inner transaction RPC methods
+
+                    // TODO: implement legacy rpc routing for innertx rpc
+                    let new_op_eth_api = ctx.registry.eth_api().clone();
+                    let custom_rpc = XlayerExt { backend: Arc::new(new_op_eth_api) };
+                    ctx.modules.merge_configured(custom_rpc.into_rpc())?;
+                    info!(target:"reth::cli", "xlayer innertx rpc enabled");
+
                     info!(message = "XLayer RPC modules initialized");
                     Ok(())
                 })

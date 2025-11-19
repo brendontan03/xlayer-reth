@@ -6,14 +6,12 @@ use eyre::Result;
 use futures::TryStreamExt;
 use revm_database::states::State;
 
-use reth_ethereum::{
-    exex::{ExExContext, ExExEvent, ExExNotification},
-    node::api::FullNodeComponents,
-    primitives::AlloyBlockHeader,
-    provider::StateProviderFactory,
-};
 use reth_evm::ConfigureEvm;
+use reth_exex::{ExExContext, ExExEvent, ExExNotification};
+use reth_node_api::FullNodeComponents;
+use reth_primitives_traits::AlloyBlockHeader;
 use reth_primitives_traits::{NodePrimitives, RecoveredBlock};
+use reth_provider::StateProviderFactory;
 use reth_revm::{database::StateProviderDatabase, primitives::alloy_primitives::TxHash};
 use reth_tracing::tracing::{error, info};
 

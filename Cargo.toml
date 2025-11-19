@@ -15,7 +15,6 @@ resolver = "2"
 members = [
     "crates/node",
     "crates/innertx", 
-    "crates/legacy-rpc",
 ]
 default-members = ["crates/node"]
 
@@ -51,7 +50,6 @@ codegen-units = 1
 
 xlayer-reth-node = { path = "crates/node" }
 xlayer-innertx = { path = "crates/innertx" }
-xlayer-legacy-rpc = { path = "crates/legacy-rpc" }
 
 # ------------------------------------------------------------------------------
 # Reth Dependencies (points to our fork)
@@ -84,6 +82,7 @@ reth-rpc = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 reth-rpc-eth-types = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 reth-storage-errors = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 reth-chainspec = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-node-api = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 
 # ------------------------------------------------------------------------------
 # Revm Dependencies (follows upstream reth)

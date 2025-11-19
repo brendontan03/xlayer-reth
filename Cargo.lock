@@ -7120,47 +7120,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-ethereum"
-version = "1.9.2"
-source = "git+https://github.com/okx/reth?branch=upstream%2Fv1.9.2#74351d98e906b8af5f118694529fb2b71d316946"
-dependencies = [
- "alloy-rpc-types-engine",
- "alloy-rpc-types-eth",
- "reth-chainspec",
- "reth-cli-util",
- "reth-codecs",
- "reth-consensus",
- "reth-consensus-common",
- "reth-db",
- "reth-engine-local",
- "reth-eth-wire",
- "reth-ethereum-cli",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-exex",
- "reth-network",
- "reth-network-api",
- "reth-node-api",
- "reth-node-builder",
- "reth-node-core",
- "reth-node-ethereum",
- "reth-primitives-traits",
- "reth-provider",
- "reth-revm",
- "reth-rpc",
- "reth-rpc-api",
- "reth-rpc-builder",
- "reth-rpc-eth-types",
- "reth-storage-api",
- "reth-tasks",
- "reth-transaction-pool",
- "reth-trie",
- "reth-trie-db",
-]
-
-[[package]]
 name = "reth-ethereum-cli"
 version = "1.9.2"
 source = "git+https://github.com/okx/reth?branch=upstream%2Fv1.9.2#74351d98e906b8af5f118694529fb2b71d316946"
@@ -7322,7 +7281,6 @@ dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "alloy-rpc-types-engine",
- "derive_more",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-ethereum-primitives",
@@ -12331,9 +12289,11 @@ dependencies = [
  "jsonrpsee",
  "once_cell",
  "reth-db",
- "reth-ethereum",
  "reth-evm",
+ "reth-exex",
+ "reth-node-api",
  "reth-primitives-traits",
+ "reth-provider",
  "reth-revm",
  "reth-rpc",
  "reth-rpc-eth-api",
@@ -12342,29 +12302,7 @@ dependencies = [
  "revm-context-interface",
  "revm-database",
  "serde",
- "serde_json",
  "tokio",
- "tracing",
- "xlayer-legacy-rpc",
-]
-
-[[package]]
-name = "xlayer-legacy-rpc"
-version = "0.1.0"
-dependencies = [
- "alloy-eips",
- "alloy-primitives",
- "alloy-rpc-types-eth",
- "alloy-serde",
- "humantime-serde",
- "jsonrpsee",
- "reth-chainspec",
- "reth-storage-api",
- "reth-storage-errors",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
 ]
 
 [[package]]

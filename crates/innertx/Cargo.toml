@@ -9,15 +9,13 @@ repository.workspace = true
 
 [features]
 default = []
-std = []
 
 [dependencies]
-# internal
-xlayer-legacy-rpc.workspace = true
-
 reth-revm.workspace = true
 reth-db = { workspace = true, features = ["mdbx"] }
-reth-ethereum = { workspace = true, features = ["full", "cli"] }
+reth-exex.workspace = true
+reth-node-api.workspace = true
+reth-provider.workspace = true
 reth-primitives-traits.workspace = true
 reth-tracing.workspace = true
 reth-evm.workspace = true
@@ -37,11 +35,9 @@ alloy-eips.workspace = true
 tokio.workspace = true
 futures.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 once_cell.workspace = true
 eyre.workspace = true
 jsonrpsee.workspace = true
-tracing.workspace = true
 
 [lints]
 workspace = true
