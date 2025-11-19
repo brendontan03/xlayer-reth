@@ -345,6 +345,9 @@ where
     Provider: DBProvider<Tx: reth_db_api::transaction::DbTxMut>,
     H: alloy_consensus::BlockHeader + Default + Sealable + Compact,
 {
+    use alloy_primitives::U256;
+    use reth_db_api::{tables, transaction::DbTxMut};
+
     let genesis_range_idx = genesis_block_number / DEFAULT_BLOCKS_PER_STATIC_FILE;
     let num_ranges_to_create = genesis_range_idx + 1;
 
@@ -356,37 +359,6 @@ where
         blocks_per_file = DEFAULT_BLOCKS_PER_STATIC_FILE,
         "Creating static file ranges for headers from block 0 to genesis block"
     );
-
-    create_and_fill_header_static_files(
-        provider,
-        static_file_provider,
-        genesis_header,
-        genesis_hash,
-        difficulty,
-        genesis_block_number,
-    )?;
-
-    Ok(())
-}
-
-/// Creates all header static file ranges and fills the genesis range.
-fn create_and_fill_header_static_files<Provider, H>(
-    provider: &Provider,
-    static_file_provider: &StaticFileProvider<impl NodePrimitives<BlockHeader = H>>,
-    genesis_header: &H,
-    genesis_hash: &B256,
-    difficulty: alloy_primitives::U256,
-    genesis_block_number: u64,
-) -> Result<(), InitStorageError>
-where
-    Provider: DBProvider<Tx: reth_db_api::transaction::DbTxMut>,
-    H: alloy_consensus::BlockHeader + Default + Sealable + Compact,
-{
-    use alloy_primitives::U256;
-    use reth_db_api::{tables, transaction::DbTxMut};
-
-    let genesis_range_idx = genesis_block_number / DEFAULT_BLOCKS_PER_STATIC_FILE;
-    let num_ranges_to_create = genesis_range_idx + 1;
 
     create_static_file_ranges(
         num_ranges_to_create,
