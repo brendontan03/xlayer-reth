@@ -414,8 +414,6 @@ where
         genesis_header,
         genesis_hash,
         difficulty,
-        num_ranges_to_create,
-        genesis_range_idx,
         genesis_block_number,
     )?;
 
@@ -429,8 +427,6 @@ fn create_and_fill_header_static_files<Provider, H>(
     genesis_header: &H,
     genesis_hash: &B256,
     difficulty: alloy_primitives::U256,
-    num_ranges_to_create: u64,
-    genesis_range_idx: u64,
     genesis_block_number: u64,
 ) -> Result<(), InitStorageError>
 where
@@ -439,6 +435,10 @@ where
 {
     use alloy_primitives::U256;
     use reth_db_api::{tables, transaction::DbTxMut};
+
+    // Calculate which range the genesis block is in
+    let genesis_range_idx = genesis_block_number / DEFAULT_BLOCKS_PER_STATIC_FILE;
+    let num_ranges_to_create = genesis_range_idx + 1;
 
     // Create all header static file ranges
     create_static_file_ranges(
