@@ -79,7 +79,7 @@ fn main() {
 
             // Validate XLayer configuration
             if let Err(e) = args.xlayer_args.validate() {
-                eprintln!("XLayer configuration error: {}", e);
+                eprintln!("XLayer configuration error: {e}");
                 std::process::exit(1);
             }
 

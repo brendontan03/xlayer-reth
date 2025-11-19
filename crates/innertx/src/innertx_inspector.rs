@@ -126,7 +126,7 @@ impl TraceCollector {
                 "created contract starts with invalid bytes 0xEF".to_string()
             }
             InstructionResult::FatalExternalError => "fatal external error".to_string(),
-            _ => format!("{:?}", result),
+            _ => format!("{result:?}"),
         }
     }
 
@@ -148,7 +148,7 @@ impl TraceCollector {
             gas: gas_limit,
             value_wei: if value_wei.is_empty() { "0" } else { &value_wei }.to_string(),
             call_value_wei: match value_wei.parse::<u128>() {
-                Ok(value) => format!("0x{:x}", value),
+                Ok(value) => format!("0x{value:x}"),
                 _ => String::from("0x0"),
             },
             to: to.clone(),

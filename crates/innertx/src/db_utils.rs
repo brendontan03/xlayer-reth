@@ -22,7 +22,7 @@ pub fn initialize(db_path: &str) -> Result<(), Report> {
     let db_dir = format!("{}/{}", db_path, "xlayerdb");
     let db_create_result = create_db(&db_dir, DatabaseArguments::default());
     if let Err(e) = db_create_result {
-        return Err(e.wrap_err(format!("xlayerdb creation failed at path {}", db_dir)));
+        return Err(e.wrap_err(format!("xlayerdb creation failed at path {db_dir}")));
     }
 
     let mut db = db_create_result.unwrap();
