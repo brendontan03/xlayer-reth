@@ -1,0 +1,30 @@
+[package]
+name = "xlayer-legacy-rpc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+reth-storage-api.workspace = true
+
+alloy-eips.workspace = true
+alloy-rpc-types-eth.workspace = true
+alloy-primitives.workspace = true
+alloy-serde.workspace = true
+
+serde.workspace = true
+serde_json.workspace = true
+humantime-serde.workspace = true
+jsonrpsee = { workspace = true, features = ["server", "macros", "http-client"] }
+tracing.workspace = true
+
+[dev-dependencies]
+reth-chainspec.workspace = true
+reth-storage-errors.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

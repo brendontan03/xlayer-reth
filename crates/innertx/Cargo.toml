@@ -12,15 +12,36 @@ default = []
 std = []
 
 [dependencies]
+# internal
+xlayer-legacy-rpc.workspace = true
+
 reth-revm.workspace = true
 reth-db = { workspace = true, features = ["mdbx"] }
+reth-ethereum = { workspace = true, features = ["full", "cli"] }
+reth-primitives-traits.workspace = true
+reth-tracing.workspace = true
+reth-evm.workspace = true
+reth-storage-api.workspace = true
+reth-rpc-eth-api.workspace = true
+reth-rpc.workspace = true
+
 revm-context-interface.workspace = true
+revm-database.workspace = true
+
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
+alloy-consensus.workspace = true
+alloy-evm.workspace = true
+alloy-eips.workspace = true
+
+tokio.workspace = true
+futures.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 once_cell.workspace = true
 eyre.workspace = true
-hashbrown.workspace = true
+jsonrpsee.workspace = true
+tracing.workspace = true
 
 [lints]
 workspace = true

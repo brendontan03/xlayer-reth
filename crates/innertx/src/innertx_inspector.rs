@@ -1,8 +1,3 @@
-use alloc::format;
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
-
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_rlp::{RlpDecodable, RlpEncodable};
 use reth_revm::{
@@ -135,6 +130,7 @@ impl TraceCollector {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn init_op(
         &mut self,
         call_type: String,
@@ -145,19 +141,20 @@ impl TraceCollector {
         gas_limit: u64,
         code_address: String,
     ) {
-        let mut txn = InternalTransaction::default();
-        txn.call_type = call_type;
-        txn.from = from.clone();
-        txn.input = input;
-        txn.is_error = false;
-        txn.gas = gas_limit;
-        txn.value_wei = if value_wei.is_empty() { "0" } else { &value_wei }.to_string();
-        txn.call_value_wei = match value_wei.parse::<u128>() {
-            Ok(value) => format!("0x{:x}", value),
-            _ => String::from("0x0"),
+        let mut txn = InternalTransaction {
+            call_type,
+            from: from.clone(),
+            input,
+            gas: gas_limit,
+            value_wei: if value_wei.is_empty() { "0" } else { &value_wei }.to_string(),
+            call_value_wei: match value_wei.parse::<u128>() {
+                Ok(value) => format!("0x{:x}", value),
+                _ => String::from("0x0"),
+            },
+            to: to.clone(),
+            ..Default::default()
         };
 
-        txn.to = to.clone();
         match txn.call_type.as_str() {
             "delegatecall" => {
                 txn.from = to;
@@ -180,7 +177,6 @@ impl TraceCollector {
             self.sibling_count.push(0);
         } else if depth < self.last_depth {
             self.sibling_count.truncate(depth + 1);
-        } else {
         }
         self.last_depth = depth;
 

@@ -1,9 +1,5 @@
 #![allow(missing_docs)]
 
-use alloc::boxed::Box;
-use alloc::vec;
-use alloc::vec::Vec;
-
 use reth_db::{
     table::{Table, TableInfo},
     TableSet,

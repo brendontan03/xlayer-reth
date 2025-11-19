@@ -3578,7 +3578,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
- "rustc-std-workspace-alloc",
 ]
 
 [[package]]
@@ -7121,6 +7120,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-ethereum"
+version = "1.9.2"
+source = "git+https://github.com/okx/reth?branch=upstream%2Fv1.9.2#74351d98e906b8af5f118694529fb2b71d316946"
+dependencies = [
+ "alloy-rpc-types-engine",
+ "alloy-rpc-types-eth",
+ "reth-chainspec",
+ "reth-cli-util",
+ "reth-codecs",
+ "reth-consensus",
+ "reth-consensus-common",
+ "reth-db",
+ "reth-engine-local",
+ "reth-eth-wire",
+ "reth-ethereum-cli",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-exex",
+ "reth-network",
+ "reth-network-api",
+ "reth-node-api",
+ "reth-node-builder",
+ "reth-node-core",
+ "reth-node-ethereum",
+ "reth-primitives-traits",
+ "reth-provider",
+ "reth-revm",
+ "reth-rpc",
+ "reth-rpc-api",
+ "reth-rpc-builder",
+ "reth-rpc-eth-types",
+ "reth-storage-api",
+ "reth-tasks",
+ "reth-transaction-pool",
+ "reth-trie",
+ "reth-trie-db",
+]
+
+[[package]]
 name = "reth-ethereum-cli"
 version = "1.9.2"
 source = "git+https://github.com/okx/reth?branch=upstream%2Fv1.9.2#74351d98e906b8af5f118694529fb2b71d316946"
@@ -7282,6 +7322,7 @@ dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "alloy-rpc-types-engine",
+ "derive_more",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-ethereum-primitives",
@@ -9643,12 +9684,6 @@ name = "rustc-hex"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
-
-[[package]]
-name = "rustc-std-workspace-alloc"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9d441c3b2ebf55cebf796bfdc265d67fa09db17b7bb6bd4be75c509e1e8fec3"
 
 [[package]]
 name = "rustc_version"
@@ -12286,15 +12321,50 @@ dependencies = [
 name = "xlayer-innertx"
 version = "0.1.0"
 dependencies = [
+ "alloy-consensus",
+ "alloy-eips",
+ "alloy-evm",
  "alloy-primitives",
  "alloy-rlp",
  "eyre",
- "hashbrown 0.14.5",
+ "futures",
+ "jsonrpsee",
  "once_cell",
  "reth-db",
+ "reth-ethereum",
+ "reth-evm",
+ "reth-primitives-traits",
  "reth-revm",
+ "reth-rpc",
+ "reth-rpc-eth-api",
+ "reth-storage-api",
+ "reth-tracing",
  "revm-context-interface",
+ "revm-database",
  "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "xlayer-legacy-rpc",
+]
+
+[[package]]
+name = "xlayer-legacy-rpc"
+version = "0.1.0"
+dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
+ "alloy-rpc-types-eth",
+ "alloy-serde",
+ "humantime-serde",
+ "jsonrpsee",
+ "reth-chainspec",
+ "reth-storage-api",
+ "reth-storage-errors",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
