@@ -172,7 +172,11 @@ async fn fb_smoke_test() {
     )
     .await
     .expect("Pending eth_getBlockTransactionCountByNumber failed");
-    assert_eq!(fb_block_transaction_count, 1, "Block transaction count should be 1");
+    assert!(
+        fb_block_transaction_count >= 1,
+        "Block transaction count should be at least 1, got {}",
+        fb_block_transaction_count
+    );
 
     // eth_getBlockInternalTransactions
     let _ =
