@@ -47,10 +47,9 @@ fn parse_genesis(s: &str) -> eyre::Result<Genesis> {
         return serde_json::from_str(&contents)
             .map_err(|e| eyre::eyre!("Failed to parse genesis file: {}", e));
     }
-    
+
     // Try to parse as JSON string
-    serde_json::from_str(s)
-        .map_err(|e| eyre::eyre!("Failed to parse genesis JSON: {}", e))
+    serde_json::from_str(s).map_err(|e| eyre::eyre!("Failed to parse genesis JSON: {}", e))
 }
 
 /// XLayer chain value parser
@@ -119,11 +118,7 @@ mod tests {
     #[test]
     fn test_parse_all_supported_chains() {
         for &chain in XLayerChainSpecParser::SUPPORTED_CHAINS {
-            assert!(
-                XLayerChainSpecParser::parse(chain).is_ok(),
-                "Failed to parse {chain}"
-            );
+            assert!(XLayerChainSpecParser::parse(chain).is_ok(), "Failed to parse {chain}");
         }
     }
 }
-

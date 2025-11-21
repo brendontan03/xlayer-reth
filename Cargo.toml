@@ -12,12 +12,7 @@ repository = "https://github.com/okx/xlayer-reth.git"
 
 [workspace]
 resolver = "2"
-members = [
-    "crates/node",
-    "crates/tests",
-    "crates/innertx",
-    "crates/chainspec",
-]
+members = ["crates/node", "crates/tests", "crates/innertx", "crates/chainspec"]
 default-members = ["crates/node"]
 
 [workspace.lints]
@@ -84,6 +79,11 @@ reth-node-core = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.
 reth-node-types = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 reth-chainspec = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 reth-optimism-forks = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-ethereum-forks = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-optimism-txpool = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-transaction-pool = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-execution-types = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
+reth-chain-state = { git = "https://github.com/okx/reth", branch = "upstream/v1.9.2" }
 
 # ------------------------------------------------------------------------------
 # Revm Dependencies (follows upstream reth)
@@ -99,13 +99,16 @@ alloy-primitives = { version = "1.4.1", default-features = false, features = [
     "map-foldhash",
 ] }
 alloy-eips = { version = "1.0.41", default-features = false }
+alloy-chains = { version = "0.2.20", default-features = false }
 alloy-rpc-types-engine = { version = "1.0.41", default-features = false }
 alloy-rpc-types-eth = { version = "1.0.41" }
 alloy-consensus = { version = "1.0.41" }
 alloy-provider = { version = "1.0.41" }
 alloy-sol-types = { version = "1.4.1", default-features = false }
 alloy-network = { version = "1.1.0", default-features = false }
-alloy-rlp = { version = "0.3.10", default-features = false, features = ["core-net"] }
+alloy-rlp = { version = "0.3.10", default-features = false, features = [
+    "core-net",
+] }
 alloy-signer = { version = "1.1.0", default-features = false }
 alloy-signer-local = { version = "1.1.0", default-features = false }
 alloy-evm = { version = "0.23.0", default-features = false }

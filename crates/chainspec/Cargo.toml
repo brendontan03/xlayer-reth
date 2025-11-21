@@ -22,12 +22,14 @@ reth-optimism-primitives = { workspace = true }
 reth-optimism-chainspec = { workspace = true }
 reth-optimism-cli = { workspace = true }
 reth-optimism-forks = { workspace = true }
+reth-ethereum-forks = { workspace = true }
 
 # ethereum
 alloy-genesis = "1.0.41"
 alloy-primitives = { workspace = true }
 alloy-consensus = { workspace = true }
 alloy-eips = { workspace = true }
+alloy-chains = { workspace = true }
 
 # op
 op-alloy-rpc-types = { workspace = true }
