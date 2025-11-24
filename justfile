@@ -51,3 +51,6 @@ watch-check:
 build-docker:
     docker build -t xlayer-reth-node:latest -f Dockerfile .
 
+xlayer:
+	cp .github/scripts/pre-commit-xlayer .git/hooks/pre-commit && \
+	chmod +x .git/hooks/pre-commit
