@@ -1,9 +1,6 @@
--include .env
-export
-
 .PHONY: build-docker
 build-docker:
-	docker build -t xlayer-reth-node:latest -f DockerfileOp .
+	docker build -t xlayer-reth-node:latest -f Dockerfile .
 
 .PHONY: run-hello
 run-hello:
