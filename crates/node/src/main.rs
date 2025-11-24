@@ -128,10 +128,12 @@ fn main() {
                     // - Inner transaction RPC methods
 
                     // TODO: implement legacy rpc routing for innertx rpc
-                    let new_op_eth_api = ctx.registry.eth_api().clone();
-                    let custom_rpc = XlayerInnerTxExt { backend: Arc::new(new_op_eth_api) };
-                    ctx.modules.merge_configured(custom_rpc.into_rpc())?;
-                    info!(target:"reth::cli", "xlayer innertx rpc enabled");
+                    if args.xlayer_args.enable_inner_tx {
+                        let new_op_eth_api = ctx.registry.eth_api().clone();
+                        let custom_rpc = XlayerInnerTxExt { backend: Arc::new(new_op_eth_api) };
+                        ctx.modules.merge_configured(custom_rpc.into_rpc())?;
+                        info!(target:"reth::cli", "xlayer innertx rpc enabled");
+                    }
 
                     info!(message = "XLayer RPC modules initialized");
                     Ok(())
