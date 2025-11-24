@@ -48,3 +48,6 @@ watch-test:
 watch-check:
     cargo watch -x "fmt --all -- --check" -x "clippy --all-targets -- -D warnings" -x test
 
+build-docker:
+    docker build -t xlayer-reth-node:latest -f Dockerfile .
+

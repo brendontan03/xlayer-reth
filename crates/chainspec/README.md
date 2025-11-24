@@ -6,7 +6,7 @@ XLayer chain specifications for xlayer-reth.
 
 This crate provides chain specifications for XLayer networks:
 - **xlayer-mainnet** (Chain ID: 196)
-- **xlayer-testnet** (Chain ID: 195)
+- **xlayer-testnet** (Chain ID: 1952)
 
 It extends the Optimism chain specification parser to support XLayer chains while maintaining compatibility with all standard Optimism chains (optimism, base, etc.).
 
@@ -72,7 +72,7 @@ The `XLayerChainSpecParser` supports the following chains:
 
 ### XLayer Chains
 - `xlayer-mainnet` - XLayer Mainnet (Chain ID: 196)
-- `xlayer-testnet` - XLayer Testnet (Chain ID: 195)
+- `xlayer-testnet` - XLayer Testnet (Chain ID: 1952)
 
 ### Standard Optimism Chains
 - `dev` - Development chain
