@@ -118,9 +118,6 @@ watch-test:
 watch-check:
     cargo watch -x "fmt --all -- --check" -x "clippy --all-targets -- -D warnings" -x test
 
-build-docker:
-    docker build -t op-reth:latest -f Dockerfile .
-
 xlayer:
 	cp .github/scripts/pre-commit-xlayer .git/hooks/pre-commit && \
 	chmod +x .git/hooks/pre-commit
