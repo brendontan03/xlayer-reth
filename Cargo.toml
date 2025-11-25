@@ -12,7 +12,12 @@ repository = "https://github.com/okx/xlayer-reth.git"
 
 [workspace]
 resolver = "2"
-members = ["crates/node", "crates/tests", "crates/innertx", "crates/rpc"]
+members = [
+    "crates/node",
+    "crates/tests",
+    "crates/innertx",
+    "crates/chainspec",
+]
 default-members = ["crates/node"]
 
 [workspace.lints]
@@ -47,6 +52,7 @@ codegen-units = 1
 
 xlayer-reth-node = { path = "crates/node" }
 xlayer-innertx = { path = "crates/innertx" }
+xlayer-chainspec = { path = "crates/chainspec" }
 xlayer-rpc = { path = "crates/rpc" }
 
 # ------------------------------------------------------------------------------
@@ -66,6 +72,7 @@ reth-provider = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-tracing = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-primitives-traits = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-evm = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-cli = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-cli-util = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-exex = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-db = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
@@ -73,7 +80,16 @@ reth-revm = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-storage-api = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-rpc = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-node-api = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-node-builder = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-node-core = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-node-types = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 reth-chainspec = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-optimism-forks = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-ethereum-forks = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-optimism-txpool = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-transaction-pool = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-execution-types = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
+reth-chain-state = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
 
 # ------------------------------------------------------------------------------
 # Revm Dependencies (follows upstream reth)
@@ -89,6 +105,8 @@ alloy-primitives = { version = "1.4.1", default-features = false, features = [
     "map-foldhash",
 ] }
 alloy-eips = { version = "1.0.41", default-features = false }
+alloy-genesis = { version = "1.0.41", default-features = false }
+alloy-chains = { version = "0.2.20", default-features = false }
 alloy-rpc-types-engine = { version = "1.0.41", default-features = false }
 alloy-rpc-types-eth = { version = "1.0.41" }
 alloy-consensus = { version = "1.0.41" }

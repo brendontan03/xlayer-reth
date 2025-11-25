@@ -97,9 +97,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "alloy-chains"
-version = "0.2.18"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfaa9ea039a6f9304b4a593d780b1f23e1ae183acdee938b11b38795acacc9f1"
+checksum = "4bc32535569185cbcb6ad5fa64d989a47bccb9a08e27284b1f2a3ccf16e6d010"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -12312,6 +12312,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "xlayer-chainspec"
+version = "0.1.0"
+dependencies = [
+ "alloy-chains",
+ "alloy-consensus",
+ "alloy-eips",
+ "alloy-genesis",
+ "alloy-primitives",
+ "eyre",
+ "once_cell",
+ "op-alloy-rpc-types",
+ "reth-chainspec",
+ "reth-cli",
+ "reth-ethereum-forks",
+ "reth-optimism-chainspec",
+ "reth-optimism-cli",
+ "reth-optimism-forks",
+ "reth-optimism-primitives",
+ "reth-primitives-traits",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
 name = "xlayer-e2e-test"
 version = "0.1.0"
 dependencies = [
@@ -12407,6 +12432,7 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+ "xlayer-chainspec",
  "xlayer-innertx",
  "xlayer-rpc",
 ]
