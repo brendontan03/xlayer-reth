@@ -51,12 +51,11 @@ impl PreExecError {
 
 /// Inner transaction information
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct PreExecInnerTx {
     /// Depth of the call
-    pub dept: U256,
+    pub dept: u64,
     /// Internal index
-    pub internal_index: U256,
+    pub internal_index: u64,
     /// Call type (call, staticcall, delegatecall, etc.)
     pub call_type: String,
     /// Name of the call

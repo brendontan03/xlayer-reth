@@ -113,7 +113,7 @@ pub mod helpers {
     ) -> Result<Vec<PreExecInnerTx>, PreExecError> {
         let mut inner_txs = Vec::new();
         convert_call_frame_recursive(call_frame, &mut inner_txs, 0, 0, String::new(), false);
-        let has_deep = inner_txs.iter().any(|it| it.dept > U256::from(0));
+        let has_deep = inner_txs.iter().any(|it| it.dept > 0);
         let has_failed = inner_txs.iter().any(|it| it.is_error || !it.error.is_empty());
         if !(has_deep || has_failed) {
             return Ok(Vec::new());
@@ -146,14 +146,14 @@ pub mod helpers {
         let value_wei = frame.value.map(|v| v.to_string()).unwrap_or_else(|| "0".into());
 
         let mut inner = PreExecInnerTx {
-            dept: U256::from(depth as u64),
-            internal_index: U256::from(index as u64),
+            dept: depth as u64,
+            internal_index: index as u64,
             call_type: frame.typ.to_string().to_lowercase(),
             name: String::new(),
             trace_address: String::new(),
             code_address: String::new(),
-            from: format!("{:?}", frame.from),
-            to: frame.to.map(|a| format!("{:?}", a)).unwrap_or_default(),
+            from: frame.from.to_checksum(None),
+            to: frame.to.map(|a| a.to_checksum(None)).unwrap_or_default(),
             input: format!("{:?}", frame.input),
             gas_used,
             output,
@@ -168,10 +168,10 @@ pub mod helpers {
             inner.name = inner.call_type.clone();
         } else {
             if let Some(stripped) = inner.from.strip_prefix("0x") {
-                inner.from = format!("0x000000000000000000000000{}", stripped);
+                inner.from = format!("0x000000000000000000000000{}", stripped.to_lowercase());
             }
             if let Some(stripped) = inner.to.strip_prefix("0x") {
-                inner.to = format!("0x000000000000000000000000{}", stripped);
+                inner.to = format!("0x000000000000000000000000{}", stripped.to_lowercase());
             }
             if inner.call_type == "callcode" {
                 inner.code_address = frame.to.map(|a| format!("{:?}", a)).unwrap_or_default();
@@ -815,8 +815,8 @@ mod tests {
         let inner_txs = result.unwrap();
         // Should have parent + nested call
         assert_eq!(inner_txs.len(), 2);
-        assert_eq!(inner_txs[0].dept, U256::from(0));
-        assert_eq!(inner_txs[1].dept, U256::from(1));
+        assert_eq!(inner_txs[0].dept, 0);
+        assert_eq!(inner_txs[1].dept, 1);
     }
 
     #[test]
@@ -866,8 +866,8 @@ mod tests {
         helpers::convert_call_frame_recursive(&frame, &mut out, 0, 0, String::new(), false);
 
         assert_eq!(out.len(), 1);
-        assert_eq!(out[0].dept, U256::from(0));
-        assert_eq!(out[0].internal_index, U256::from(0));
+        assert_eq!(out[0].dept, 0);
+        assert_eq!(out[0].internal_index, 0);
         assert_eq!(out[0].call_type, "call");
         assert!(!out[0].is_error);
     }
