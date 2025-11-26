@@ -157,7 +157,7 @@ where
                         match res {
                             Ok(n) => {
                                 if n.is_none() {
-                                    debug!("Route to legacy for method = {}", method);
+                                    debug!("Route to legacy for method (block by hash not found) = {}", method);
                                     let service = LegacyRpcRouterService { inner, config, client };
                                     return service.forward_to_legacy(req).await;
                                 } else {
