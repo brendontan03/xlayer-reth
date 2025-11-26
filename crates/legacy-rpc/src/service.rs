@@ -6,9 +6,42 @@ use jsonrpsee::{
     types::Request,
     MethodResponse,
 };
-use tracing::{debug};
+use tracing::debug;
 
 use crate::LegacyRpcRouterService;
+
+/// Only these methods should be considered for legacy routing.
+#[inline]
+pub fn is_legacy_routable(method: &str) -> bool {
+    matches!(
+        method,
+        "eth_getBlockByNumber"
+            | "eth_getBlockByHash"
+            | "eth_getBlockTransactionCountByNumber"
+            | "eth_getBlockTransactionCountByHash"
+            | "eth_getBlockReceipts"
+            | "eth_getHeaderByNumber"
+            | "eth_getHeaderByHash"
+            | "eth_getTransactionByHash"
+            | "eth_getTransactionReceipt"
+            | "eth_getTransactionByBlockHashAndIndex"
+            | "eth_getTransactionByBlockNumberAndIndex"
+            | "eth_getRawTransactionByHash"
+            | "eth_getRawTransactionByBlockHashAndIndex"
+            | "eth_getRawTransactionByBlockNumberAndIndex"
+            | "eth_getBalance"
+            | "eth_getCode"
+            | "eth_getStorageAt"
+            | "eth_getTransactionCount"
+            | "eth_call"
+            | "eth_estimateGas"
+            | "eth_createAccessList"
+            | "eth_getLogs"
+            | "eth_getInternalTransactions"
+            | "eth_getBlockInternalTransactions"
+            | "eth_transactionPreExec"
+    )
+}
 
 /// Takes block number/hash as param
 #[inline]
@@ -102,7 +135,7 @@ where
             }
 
             // Not under legacy routing
-            if !crate::is_legacy_routable(&method) {
+            if !is_legacy_routable(&method) {
                 return inner.call(req).await;
             }
 
@@ -133,7 +166,7 @@ where
                                     debug!("No route to legacy since got block num from block hash. block = {}", n.unwrap());
                                 }
                             }
-                            Err(err) => debug!("Error getting block by hash = {err:?}")
+                            Err(err) => debug!("Error getting block by hash = {err:?}"),
                         }
                     } else {
                         let block_num = block_param.parse::<u64>().unwrap();
