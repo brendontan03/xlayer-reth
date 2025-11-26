@@ -9,9 +9,9 @@ use jsonrpsee::{
 
 use crate::LegacyRpcRouterService;
 
+/// Takes block number/hash as param
 #[inline]
 fn need_parse_block(method: &str) -> bool {
-    // route_by_number + route_by_block_id + route_by_block_id_opt
     matches!(
         method,
         "eth_getBlockByNumber"
@@ -31,9 +31,9 @@ fn need_parse_block(method: &str) -> bool {
     )
 }
 
+/// Need to fetch block num from DB/API
 #[inline]
 fn need_get_block(method: &str) -> bool {
-    // route_by_block_id + route_by_block_id_opt
     matches!(
         method,
         "eth_getBlockReceipts"
@@ -46,6 +46,35 @@ fn need_get_block(method: &str) -> bool {
             | "eth_createAccessList"
             | "eth_transactionPreExec"
     )
+}
+
+/// Returns the block param index.
+///
+/// In eth requests, there is params list: [...].
+/// Looks at each method and decides block num/hash
+/// param position in that argument list.
+#[inline]
+fn block_param_pos(method: &str) -> usize {
+    // 2nd position (index 1)
+    if matches!(
+        method,
+        "eth_getBalance"
+            | "eth_getCode"
+            | "eth_getTransactionCount"
+            | "eth_call"
+            | "eth_estimateGas"
+            | "eth_createAccessList"
+            | "eth_transactionPreExec"
+    ) {
+        return 1;
+    }
+
+    // 3rd position (index 2)
+    if matches!(method, "eth_getStorageAt") {
+        return 2;
+    }
+
+    0
 }
 
 impl<S> RpcServiceT for LegacyRpcRouterService<S>
@@ -78,7 +107,8 @@ where
 
             if need_parse_block(&method) {
                 // TODO: set param index based on method
-                let block_param = crate::parse_block_param(params, 0, config.cutoff_block);
+                let block_param =
+                    crate::parse_block_param(params, block_param_pos(&method), config.cutoff_block);
                 if let Some(block_param) = block_param {
                     // Clone to prevent lifetime error
                     let service = LegacyRpcRouterService {
