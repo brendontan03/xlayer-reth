@@ -169,11 +169,15 @@ where
                             Err(err) => debug!("Error getting block by hash = {err:?}"),
                         }
                     } else {
-                        let block_num = block_param.parse::<u64>().unwrap();
-                        debug!("block_num = {}", block_num);
-                        if block_num < service.config.cutoff_block {
-                            debug!("Route to legacy for method (below cuttoff) = {}", method);
-                            return service.forward_to_legacy(req).await;
+                        match block_param.parse::<u64>() {
+                            Ok(block_num) => {
+                                debug!("block_num = {}", block_num);
+                                if block_num < service.config.cutoff_block {
+                                    debug!("Route to legacy for method (below cuttoff) = {}", method);
+                                    return service.forward_to_legacy(req).await;
+                                }
+                            },
+                            Err(err) => debug!("Failed to parse block num, err = {err:?}"),
                         }
                     }
                 } else {
