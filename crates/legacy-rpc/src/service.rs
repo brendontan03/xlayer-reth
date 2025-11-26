@@ -69,6 +69,11 @@ where
                 return inner.call(req).await;
             }
 
+            // Not under legacy routing
+            if !crate::is_legacy_routable(&method) {
+                return inner.call(req).await;
+            }
+
             if need_parse_block(&method) {
                 let block_param = crate::parse_block_param(params, 0, config.cutoff_block);
                 if let Some(block_param) = block_param {
