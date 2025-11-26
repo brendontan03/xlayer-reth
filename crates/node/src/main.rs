@@ -5,7 +5,7 @@ mod args_xlayer;
 use std::path::Path;
 use std::sync::Arc;
 
-use args_xlayer::XLayerArgs;
+use args_xlayer::{ApolloArgs, XLayerArgs};
 use clap::Parser;
 use tracing::{error, info};
 
@@ -14,6 +14,7 @@ use reth::{
     providers::providers::BlockchainProvider,
     version::{default_reth_version_metadata, try_init_version_metadata, RethCliVersionConsts},
 };
+use reth_apollo::{ApolloConfig, ApolloService};
 use reth_optimism_cli::Cli;
 use reth_optimism_node::{args::RollupArgs, OpNode};
 use xlayer_chainspec::XLayerChainSpecParser;
@@ -107,6 +108,10 @@ fn main() {
                 }
             }
 
+            if args.xlayer_args.apollo.enabled {
+                run_apollo(&args.xlayer_args.apollo).await;
+            }
+
             let NodeHandle { node: _node, node_exit_future } = builder
                 .with_types_and_provider::<OpNode, BlockchainProvider<_>>()
                 .with_components(op_node.components())
@@ -114,7 +119,6 @@ fn main() {
                 .on_component_initialized(move |_ctx| {
                     // TODO: Initialize XLayer components here
                     // - Bridge intercept configuration
-                    // - Apollo configuration
                     // - Inner transaction tracking
                     Ok(())
                 })
@@ -126,7 +130,6 @@ fn main() {
                 .extend_rpc_modules(move |ctx| {
                     // TODO: Add XLayer RPC extensions here
                     // - Bridge intercept RPC methods
-                    // - Apollo RPC methods
                     // - Inner transaction RPC methods
 
                     // TODO: implement legacy rpc routing for innertx rpc
@@ -159,8 +162,34 @@ fn main() {
                     builder.launch_with(launcher)
                 })
                 .await?;
-
+ 
             node_exit_future.await
         })
         .unwrap();
+}
+
+async fn run_apollo(apollo_args: &ApolloArgs) {
+    tracing::info!(target: "reth::apollo", "[Apollo] Apollo enabled: {:?}", apollo_args.enabled);
+    tracing::info!(target: "reth::apollo", "[Apollo] Apollo app ID: {:?}", apollo_args.apollo_app_id);
+    tracing::info!(target: "reth::apollo", "[Apollo] Apollo IP: {:?}", apollo_args.apollo_ip);
+    tracing::info!(target: "reth::apollo", "[Apollo] Apollo cluster: {:?}", apollo_args.apollo_cluster);
+    tracing::info!(target: "reth::apollo", "[Apollo] Apollo namespace: {:?}", apollo_args.apollo_namespace);
+
+    // Create Apollo config from args
+    let apollo_config = ApolloConfig {
+        meta_server: vec![apollo_args.apollo_ip.to_string()],
+        app_id: apollo_args.apollo_app_id.to_string(),
+        cluster_name: apollo_args.apollo_cluster.to_string(),
+        namespaces: Some(apollo_args.apollo_namespace.split(',').map(|s| s.to_string()).collect()),
+        secret: None,
+    };
+
+    tracing::info!(target: "reth::apollo", "[Apollo] Creating Apollo config");
+
+    // Initialize Apollo singleton
+    if let Err(e) = ApolloService::try_initialize(apollo_config).await {
+        tracing::error!(target: "reth::apollo", "[Apollo] Failed to initialize Apollo: {:?}; Proceeding with node launch without Apollo", e);
+    } else {
+        tracing::info!(target: "reth::apollo", "[Apollo] Apollo initialized successfully")
+    }
 }
