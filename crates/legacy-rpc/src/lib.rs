@@ -117,11 +117,7 @@ impl<S> LegacyRpcRouterService<S> {
 pub fn is_block_hash(hex: &str) -> bool {
     if hex.starts_with("0x") {
         // Check if it's a block hash (66 chars) or block number
-        if hex.len() == 66 {
-            true
-        } else {
-            false
-        }
+        hex.len() == 66
     } else {
         false
     }
