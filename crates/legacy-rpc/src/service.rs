@@ -161,7 +161,6 @@ where
                                         "Route to legacy for method (block by hash not found) = {}",
                                         method
                                     );
-                                    let service = LegacyRpcRouterService { inner, config, client };
                                     return service.forward_to_legacy(req).await;
                                 } else {
                                     // TODO: if block_num parsed from blk hash is smaller than
