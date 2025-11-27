@@ -125,10 +125,6 @@ fn main() {
             let add_ons = op_node.add_ons()
                 .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config));
 
-            if args.xlayer_args.legacy.legacy_rpc_enabled {
-                info!(target:"reth::cli", "xlayer legacy rpc enabled");
-            }
-
             if args.xlayer_args.apollo.enabled {
                 run_apollo(&args.xlayer_args.apollo).await;
             }

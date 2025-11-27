@@ -1,6 +1,8 @@
-use reqwest::Client;
 use std::sync::Arc;
+
+use reqwest::Client;
 use tower::Layer;
+use tracing::info;
 
 use crate::{LegacyRpcRouterConfig, LegacyRpcRouterService};
 
@@ -17,6 +19,11 @@ impl LegacyRpcRouterLayer {
             .timeout(config.timeout)
             .build()
             .expect("Failed to create HTTP client");
+
+        if config.enabled {
+            info!(target:"reth::cli", "xlayer legacy rpc enabled");
+        }
+
         Self { config: Arc::new(config), client }
     }
 }
