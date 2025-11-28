@@ -170,6 +170,62 @@ where
                 return inner.call(req).await;
             }
 
+            if method == "eth_getLogs"
+                && let Some((from_block, to_block)) =
+                    crate::get_logs::parse_eth_get_logs_params(params)
+            {
+                if to_block < config.cutoff_block {
+                    // Pure legacy
+                    let service = LegacyRpcRouterService {
+                        inner: inner.clone(),
+                        config: config.clone(),
+                        client: client.clone(),
+                    };
+                    return service.forward_to_legacy(req).await;
+                } else if from_block >= config.cutoff_block {
+                    // Pure local
+                    return inner.call(req).await;
+                } else {
+                    // hybrid
+                    let service = LegacyRpcRouterService {
+                        inner: inner.clone(),
+                        config: config.clone(),
+                        client: client.clone(),
+                    };
+
+                    // Split into two requests
+                    // 1. Legacy request: fromBlock to cutoff-1
+                    let legacy_req = crate::get_logs::modify_eth_get_logs_params(
+                        &req,
+                        Some(from_block),
+                        Some(config.cutoff_block - 1),
+                    );
+
+                    // 2. Local request: cutoff to toBlock
+                    let local_req = crate::get_logs::modify_eth_get_logs_params(
+                        &req,
+                        Some(config.cutoff_block),
+                        Some(to_block),
+                    );
+
+                    if let (Some(legacy_req), Some(local_req)) = (legacy_req, local_req) {
+                        // Call both and merge results
+                        let legacy_response = service.forward_to_legacy(legacy_req).await;
+                        let local_response = inner.call(local_req).await;
+
+                        // Merge the results
+                        return crate::get_logs::merge_eth_get_logs_responses(
+                            legacy_response,
+                            local_response,
+                            req.id().clone(),
+                        );
+                    }
+
+                    // Fallback to normal if modification failed
+                    return inner.call(req).await;
+                }
+            }
+
             if method == "eth_getInternalTransactions" {
                 let tx_hash = crate::parse_tx_hash_param(params, 0);
                 if let Some(tx_hash) = tx_hash {
