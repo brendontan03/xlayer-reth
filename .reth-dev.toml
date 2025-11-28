@@ -3,6 +3,7 @@ reth = { path = "RETH_PATH_PLACEHOLDER/bin/reth" }
 reth-chain-state = { path = "RETH_PATH_PLACEHOLDER/crates/chain-state" }
 reth-chainspec = { path = "RETH_PATH_PLACEHOLDER/crates/chainspec" }
 reth-cli = { path = "RETH_PATH_PLACEHOLDER/crates/cli/cli" }
+reth-cli-commands = { path = "RETH_PATH_PLACEHOLDER/crates/cli/commands" }
 reth-cli-util = { path = "RETH_PATH_PLACEHOLDER/crates/cli/util" }
 reth-db = { path = "RETH_PATH_PLACEHOLDER/crates/storage/db" }
 reth-errors = { path = "RETH_PATH_PLACEHOLDER/crates/errors" }
