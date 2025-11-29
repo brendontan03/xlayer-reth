@@ -285,11 +285,7 @@ where
                 let local_response = inner.call(local_req).await;
 
                 // Merge the results
-                return merge_eth_get_logs_responses(
-                    legacy_response,
-                    local_response,
-                    req.id(),
-                );
+                return merge_eth_get_logs_responses(legacy_response, local_response, req.id());
             }
 
             debug!("No legacy routing for method = eth_getLogs");
