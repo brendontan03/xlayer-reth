@@ -160,11 +160,11 @@ where
         let inner = self.inner.clone();
 
         Box::pin(async move {
-            let method = req.method_name().to_string();
+            let method = req.method_name();
 
             // If legacy not enabled, do not route.
             // Not under legacy routing, do not route.
-            if !config.enabled || !is_legacy_routable(&method) {
+            if !config.enabled || !is_legacy_routable(method) {
                 return inner.call(req).await;
             }
 
@@ -172,9 +172,9 @@ where
                 return crate::get_logs::handle_eth_get_logs(req, client, config, inner).await;
             } else if method == "eth_getInternalTransactions" {
                 return handle_eth_get_internal_transactions(req, client, config, inner).await;
-            } else if should_try_local_then_legacy(&method) {
+            } else if should_try_local_then_legacy(method) {
                 return handle_try_local_then_legacy(req, client, config, inner).await;
-            } else if need_parse_block(&method) {
+            } else if need_parse_block(method) {
                 return handle_block_param_methods(req, client, config, inner).await;
             }
 
@@ -229,19 +229,18 @@ async fn handle_try_local_then_legacy<S>(
 where
     S: RpcServiceT<MethodResponse = MethodResponse> + Send + Sync + Clone + 'static,
 {
-    let method = req.method.to_string();
+    let method = req.method_name();
     let res = inner.call(req.clone()).await;
     if res.is_error() || (res.is_success() && is_result_empty(&res)) {
         let service = LegacyRpcRouterService { inner: inner.clone(), config, client };
         debug!(
-            "Route to legacy for method = {}. is_error = {}, is_empty_result = {}",
-            method,
+            "Route to legacy for method = {method}. is_error = {}, is_empty_result = {}",
             res.is_error(),
             res.is_success()
         );
         service.forward_to_legacy(req).await
     } else {
-        debug!("No legacy routing for method (local success with data) = {}", method);
+        debug!("No legacy routing(local success with data) for method = {method}");
         res
     }
 }
@@ -257,9 +256,9 @@ where
 {
     let _p = req.params(); // keeps compiler quiet
     let params = _p.as_str().unwrap();
-    let method = req.method.to_string();
+    let method = req.method_name();
     let block_param =
-        crate::parse_block_param(params, block_param_pos(&method), config.cutoff_block);
+        crate::parse_block_param(params, block_param_pos(method), config.cutoff_block);
 
     let cutoff_block = config.cutoff_block;
     if let Some(block_param) = block_param {
@@ -298,5 +297,5 @@ where
         debug!("Failed to parse block param, got None");
     }
 
-    inner.call(req.clone()).await
+    inner.call(req).await
 }
