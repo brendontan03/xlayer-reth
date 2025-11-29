@@ -281,8 +281,10 @@ where
                 );
 
                 // Call both and merge results
-                let legacy_response = service.forward_to_legacy(legacy_req).await;
-                let local_response = inner.call(local_req).await;
+                let (legacy_response, local_response) = tokio::join!(
+                    async { service.forward_to_legacy(legacy_req).await },
+                    async { inner.call(local_req).await }
+                );
 
                 // Merge the results
                 return merge_eth_get_logs_responses(legacy_response, local_response, req.id());
