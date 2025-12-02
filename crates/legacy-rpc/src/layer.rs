@@ -21,7 +21,7 @@ impl LegacyRpcRouterLayer {
             .expect("Failed to create HTTP client");
 
         if config.enabled {
-            info!(target:"reth::cli", "xlayer legacy rpc enabled");
+            info!(target:"xlayer_legacy_rpc", "xlayer legacy rpc enabled");
         }
 
         Self { config: Arc::new(config), client }

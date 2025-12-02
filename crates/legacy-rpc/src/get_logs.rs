@@ -214,6 +214,7 @@ where
     if let Some((from_block, to_block)) = parse_eth_get_logs_params(params) {
         if to_block < cutoff_block {
             debug!(
+                target:"xlayer_legacy_rpc",
                 "eth_getLogs pure legacy routing (from_block = {}, to_block = {})",
                 from_block, to_block
             );
@@ -221,6 +222,7 @@ where
             return service.forward_to_legacy(req).await;
         } else if from_block >= cutoff_block {
             debug!(
+                target:"xlayer_legacy_rpc",
                 "eth_getLogs pure local routing (from_block = {}, to_block = {})",
                 from_block, to_block
             );
@@ -238,6 +240,7 @@ where
 
             if let (Some(legacy_req), Some(local_req)) = (legacy_req, local_req) {
                 debug!(
+                    target:"xlayer_legacy_rpc",
                     "eth_getLogs hybrid routing (from_block = {}, {}) and ({}, to_block = {})",
                     from_block,
                     cutoff_block - 1,
@@ -255,7 +258,7 @@ where
                 return merge_eth_get_logs_responses(legacy_response, local_response, req.id());
             }
 
-            debug!("No legacy routing for method = eth_getLogs");
+            debug!(target:"xlayer_legacy_rpc", "No legacy routing for method = eth_getLogs");
 
             // Fallback to normal if modification failed
             return inner.call(req).await;

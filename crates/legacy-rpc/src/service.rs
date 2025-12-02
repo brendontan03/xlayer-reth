@@ -181,7 +181,7 @@ where
                 return handle_block_param_methods(req, client, config, inner).await;
             }
 
-            debug!("No legacy routing for method = {}", method);
+            debug!(target:"xlayer_legacy_rpc", "No legacy routing for method = {}", method);
             // Default resorts to normal rpc calls.
             inner.call(req).await
         }))
@@ -226,6 +226,7 @@ where
     if res.is_ok_and(|hash| hash.is_none()) {
         service.forward_to_legacy(req).await
     } else {
+        debug!(target:"xlayer_legacy_rpc", "No legacy routing for method = {}", req.method_name());
         inner.call(req).await
     }
 }
@@ -244,13 +245,14 @@ where
     if res.is_error() || (res.is_success() && is_result_empty(&res)) {
         let service = LegacyRpcRouterService { inner: inner.clone(), config, client };
         debug!(
+            target:"xlayer_legacy_rpc",
             "Route to legacy for method = {method}. is_error = {}, is_empty_result = {}",
             res.is_error(),
             res.is_success()
         );
         service.forward_to_legacy(req).await
     } else {
-        debug!("No legacy routing(local success with data) for method = {method}");
+        debug!(target:"xlayer_legacy_rpc", "No legacy routing(local success with data) for method = {method}");
         res
     }
 }
@@ -278,34 +280,40 @@ where
             match res {
                 Ok(n) => {
                     if n.is_none() {
-                        debug!("Route to legacy for method (block by hash not found) = {}", method);
+                        debug!(target:"xlayer_legacy_rpc", "Route to legacy for method (block by hash not found) = {}", method);
                         return service.forward_to_legacy(req).await;
                     } else {
                         // TODO: if block_num parsed from blk hash is smaller than
                         // cutoff, route to legacy as well?
                         debug!(
+                            target:"xlayer_legacy_rpc",
                             "No route to legacy since got block num from block hash. block = {:?}",
                             n
                         );
                     }
                 }
-                Err(err) => debug!("Error getting block by hash = {err:?}"),
+                Err(err) => {
+                    debug!(target:"xlayer_legacy_rpc", "Error getting block by hash = {err:?}")
+                }
             }
         } else {
             match block_param.parse::<u64>() {
                 Ok(block_num) => {
-                    debug!("block_num = {}", block_num);
+                    debug!(target:"xlayer_legacy_rpc", "block_num = {}", block_num);
                     if block_num < cutoff_block {
-                        debug!("Route to legacy for method (below cuttoff) = {}", method);
+                        debug!(target:"xlayer_legacy_rpc", "Route to legacy for method (below cuttoff) = {}", method);
                         return service.forward_to_legacy(req).await;
                     }
                 }
-                Err(err) => debug!("Failed to parse block num, err = {err:?}"),
+                Err(err) => {
+                    debug!(target:"xlayer_legacy_rpc", "Failed to parse block num, err = {err:?}")
+                }
             }
         }
     } else {
-        debug!("Failed to parse block param, got None");
+        debug!(target:"xlayer_legacy_rpc", "Failed to parse block param, got None");
     }
 
+    debug!(target:"xlayer_legacy_rpc", "No legacy routing for method = {}", method);
     inner.call(req).await
 }
