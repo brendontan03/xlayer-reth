@@ -6,7 +6,10 @@ use std::sync::Arc;
 
 use jsonrpsee::{
     core::middleware::RpcServiceT,
-    types::{ErrorObject, Request},
+    types::{
+        error::{CALL_EXECUTION_FAILED_CODE, INTERNAL_ERROR_CODE},
+        ErrorObject, Request,
+    },
     MethodResponse,
 };
 use jsonrpsee_types::Id;
@@ -51,8 +54,11 @@ impl<S> LegacyRpcRouterService<S> {
                         let payload = jsonrpsee_types::ResponsePayload::success(result).into();
                         MethodResponse::response(request_id, payload, usize::MAX)
                     } else if let Some(error) = json.get("error") {
-                        let code =
-                            error.get("code").and_then(|c| c.as_i64()).unwrap_or(-32000) as i32;
+                        let code = error
+                            .get("code")
+                            .and_then(|c| c.as_i64())
+                            .unwrap_or(CALL_EXECUTION_FAILED_CODE as i64)
+                            as i32;
                         let message = error
                             .get("message")
                             .and_then(|m| m.as_str())
@@ -64,20 +70,32 @@ impl<S> LegacyRpcRouterService<S> {
                     } else {
                         MethodResponse::error(
                             request_id,
-                            ErrorObject::owned(-32603, "Invalid legacy response", None::<()>),
+                            ErrorObject::owned(
+                                INTERNAL_ERROR_CODE,
+                                "Invalid legacy response",
+                                None::<()>,
+                            ),
                         )
                     }
                 }
                 Err(e) => MethodResponse::error(
                     request_id,
-                    ErrorObject::owned(-32603, format!("Legacy parse error: {e}"), None::<()>),
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Legacy parse error: {e}"),
+                        None::<()>,
+                    ),
                 ),
             },
             Err(e) => {
                 tracing::error!(target: "rpc::legacy", error = %e, "Legacy RPC request failed");
                 MethodResponse::error(
                     request_id,
-                    ErrorObject::owned(-32603, format!("Legacy RPC error: {e}"), None::<()>),
+                    ErrorObject::owned(
+                        INTERNAL_ERROR_CODE,
+                        format!("Legacy RPC error: {e}"),
+                        None::<()>,
+                    ),
                 )
             }
         }
