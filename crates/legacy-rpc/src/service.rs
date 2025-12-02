@@ -269,8 +269,7 @@ where
     let _p = req.params(); // keeps compiler quiet
     let params = _p.as_str().unwrap();
     let method = req.method_name();
-    let block_param =
-        crate::parse_block_param(params, block_param_pos(method), config.cutoff_block);
+    let block_param = crate::parse_block_param(params, block_param_pos(method));
 
     let cutoff_block = config.cutoff_block;
     if let Some(block_param) = block_param {

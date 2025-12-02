@@ -158,7 +158,7 @@ pub fn is_block_hash(hex: &str) -> bool {
 
 /// Handles latest, pending, hash, hex number etc
 #[inline]
-pub(crate) fn parse_block_param(params: &str, index: usize, genesis_num: u64) -> Option<String> {
+pub(crate) fn parse_block_param(params: &str, index: usize) -> Option<String> {
     let parsed: serde_json::Value = serde_json::from_str(params).ok()?;
     let arr = parsed.as_array()?;
 
@@ -175,8 +175,8 @@ pub(crate) fn parse_block_param(params: &str, index: usize, genesis_num: u64) ->
                 // Don't route these to legacy (use current chain state)
                 "latest" | "pending" | "safe" | "finalized" => None,
 
-                // Route to legacy (set to genesis)
-                "earliest" => Some(genesis_num.to_string()),
+                // Route to legacy (not genesis, as local has no data)
+                "earliest" => Some("0".into()),
 
                 // Parse hex block number/hash
                 hex if hex.starts_with("0x") => {
@@ -192,6 +192,23 @@ pub(crate) fn parse_block_param(params: &str, index: usize, genesis_num: u64) ->
                 }
 
                 _ => None,
+            }
+        }
+        // Handle object format: {"blockHash": "0x..."} or {"blockNumber": "0x..."}
+        serde_json::Value::Object(obj) => {
+            if let Some(serde_json::Value::String(hash)) = obj.get("blockHash") {
+                Some(hash.clone())
+            } else if let Some(serde_json::Value::String(num)) = obj.get("blockNumber") {
+                // Handle blockNumber in object format
+                if let Some(stripped) = num.strip_prefix("0x") {
+                    u64::from_str_radix(stripped, 16).ok().map(|n| n.to_string())
+                // if num.starts_with("0x") {
+                //     u64::from_str_radix(&num[2..], 16).ok().map(|n| n.to_string())
+                } else {
+                    Some(num.clone())
+                }
+            } else {
+                None
             }
         }
         // decimal number not handled...
