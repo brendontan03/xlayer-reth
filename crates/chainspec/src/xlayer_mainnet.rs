@@ -284,7 +284,6 @@ mod tests {
     #[test]
     fn test_xlayer_mainnet_jovian_activation() {
         use crate::{XLAYER_MAINNET_HARDFORKS, XLAYER_MAINNET_JOVIAN_TIMESTAMP};
-        use alloy_op_hardforks::OP_MAINNET_JOVIAN_TIMESTAMP;
 
         let spec = &*XLAYER_MAINNET;
         let hardforks = &*XLAYER_MAINNET_HARDFORKS;
@@ -297,8 +296,12 @@ mod tests {
             reth_ethereum_forks::ForkCondition::Timestamp(ts) if ts == XLAYER_MAINNET_JOVIAN_TIMESTAMP
         ));
 
-        // Verify XLayer mainnet uses the same timestamp as OP mainnet
-        assert_eq!(XLAYER_MAINNET_JOVIAN_TIMESTAMP, OP_MAINNET_JOVIAN_TIMESTAMP);
+        // Verify XLayer mainnet uses expected timestamp (same as OP mainnet: 2025-12-02 16:00:01 UTC)
+        const EXPECTED_OP_MAINNET_JOVIAN: u64 = 1764691201;
+        assert_eq!(
+            XLAYER_MAINNET_JOVIAN_TIMESTAMP, EXPECTED_OP_MAINNET_JOVIAN,
+            "XLayer mainnet Jovian timestamp should match OP mainnet"
+        );
 
         // Test activation before Jovian timestamp
         assert!(!spec
