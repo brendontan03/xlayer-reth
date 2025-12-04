@@ -82,6 +82,8 @@ fn main() {
     // Initialize version metadata
     init_version_metadata();
 
+    XLayerArgs::validate_init_command();
+
     Cli::<XLayerChainSpecParser, Args>::parse()
         .run(|builder, args| async move {
             info!(message = "starting custom XLayer node");
