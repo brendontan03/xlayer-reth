@@ -10,7 +10,7 @@ pub const DEFAULT_L1_NETWORK_URL: &str = "http://localhost:8545";
 
 // L2 Configuration
 /// Default L2 chain ID for testing
-pub const DEFAULT_L2_CHAIN_ID: u64 = 196;
+pub const DEFAULT_L2_CHAIN_ID: u64 = 195;
 /// Default L2 sequencer URL for testing
 pub const DEFAULT_L2_SEQ_URL: &str = "http://localhost:8123";
 /// Default L2 RPC node URL for testing
