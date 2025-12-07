@@ -948,6 +948,11 @@ async fn fb_rpc_comparison_test(#[case] test_name: &str) {
 async fn fb_subscription_test() -> Result<()> {
     let ws_url = operations::manager::DEFAULT_FLASHBLOCKS_WS_URL;
     let test_address = operations::DEFAULT_L2_NEW_ACC1_ADDRESS;
+    let fb_client = operations::create_test_client(operations::DEFAULT_L2_NETWORK_URL_FB);
+
+    let current_block_number =
+        operations::eth_block_number(&fb_client).await.expect("Failed to get current block number");
+    println!("Current block number: {}", current_block_number);
 
     let num_txs: usize = 5;
 
@@ -988,6 +993,13 @@ async fn fb_subscription_test() -> Result<()> {
                     };
 
                     let block_num = notification["metadata"]["block_number"].as_u64().unwrap_or(0);
+
+                    assert!(
+                        block_num >= current_block_number,
+                        "Flashblock block number {} should be >= current block {}",
+                        block_num,
+                        current_block_number
+                    );
 
                     if let Some(txs) = notification["diff"]["transactions"].as_array() {
                         for tx in txs {
