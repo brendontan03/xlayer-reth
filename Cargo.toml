@@ -115,8 +115,6 @@ revm-inspectors = { version = "0.32.0", default-features = false, features = [
 # Flashblocks Dependencies
 # ------------------------------------------------------------------------------
 op-rbuilder = { git = "https://github.com/okx/op-rbuilder", branch = "upstream/dev" }
-op-rbuilder-p2p = { git = "https://github.com/okx/op-rbuilder", branch = "upstream/dev" }
-op-rbuilder-tdx-quote-provider = { git = "https://github.com/okx/op-rbuilder", branch = "upstream/dev" }
 
 # ------------------------------------------------------------------------------
 # Alloy Dependencies
