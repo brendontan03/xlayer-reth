@@ -195,10 +195,6 @@ uuid = { version = "1.6.1", features = ["serde", "v5", "v4"] }
 # ==============================================================================
 # Dependency Patches
 # ==============================================================================
-# For local development: uncomment to use local op-rbuilder instead of git
-[patch."https://github.com/okx/op-rbuilder"]
-op-rbuilder = { path = "../op-rbuilder/crates/op-rbuilder" }
-
 # Redirects all paradigmxyz/reth dependencies to okx/reth fork for op-rbuilder.
 [patch."https://github.com/paradigmxyz/reth"]
 reth = { git = "https://github.com/okx/reth", branch = "upstream/dev" }
