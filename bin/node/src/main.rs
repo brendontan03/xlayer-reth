@@ -39,7 +39,7 @@ use core::net::SocketAddr;
 
 use op_rbuilder::builders::WebSocketPublisher;
 use op_rbuilder::metrics::OpRBuilderMetrics;
-use xlayer_flashblocks_ws::handler::initialize_flashblocks_ws;
+use xlayer_flashblocks::handler::initialize_flashblocks_ws;
 
 #[derive(Debug, Clone, PartialEq, Eq, clap::Args)]
 #[command(next_help_heading = "Rollup")]
@@ -181,31 +181,11 @@ fn main() {
                             info!(target: "reth::cli", "xlayer innertx rpc enabled");
                         }
 
-                        let flash_block_rx = new_op_eth_api.subscribe_received_flashblocks();
-
                         // Register XLayer RPC
                         let xlayer_rpc = XlayerRpcExt { backend: new_op_eth_api };
                         ctx.modules.merge_configured(xlayer_rpc.into_rpc())?;
                         info!(target: "reth::cli", "xlayer rpc extension enabled");
 
-                        // Only initialize flashblocks websocket rebroadcaster for RPC
-                        if args.node_args.rollup_args.flashblocks_url.is_some() {
-                            info!(target: "reth::cli", "xlayer initializing flashblocks websocket rebroadcaster");
-                            let ws_addr = SocketAddr::new(
-                                args.xlayer_args.rebroadcast_flashblocks_addr.parse()?,
-                                args.xlayer_args.rebroadcast_flashblocks_port,
-                            );
-                        
-                            let metrics = Arc::new(OpRBuilderMetrics::default());
-                        
-                            let ws_pub = Arc::new(WebSocketPublisher::new(ws_addr, metrics)
-                                .map_err(|e| eyre::eyre!("Failed to create WebSocket publisher: {e}"))?);
-                        
-                            if let Some(flash_block_rx) = flash_block_rx {
-                                initialize_flashblocks_ws(ctx.node(), flash_block_rx, ws_pub);
-                                info!(target: "reth::cli", "xlayer flashblocks websocket rebroadcaster initialized");
-                            }
-                        }
                         info!(message = "XLayer RPC modules initialized");
                         Ok(())
                     })
@@ -254,9 +234,32 @@ fn main() {
                             info!(target: "reth::cli", "xlayer inner tx flashblocks handler initialized");
                         }
 
+                        // Subscribe to flashblocks before moving new_op_eth_api
+                        let flash_block_rx = new_op_eth_api.subscribe_received_flashblocks();
+
                         // Register XLayer RPC
                         let xlayer_rpc = XlayerRpcExt { backend: new_op_eth_api };
                         ctx.modules.merge_configured(xlayer_rpc.into_rpc())?;
+
+                        // Only initialize flashblocks websocket rebroadcaster for RPC
+                        if args.node_args.rollup_args.flashblocks_url.is_some() {
+                            info!(target: "reth::cli", "xlayer initializing flashblocks websocket rebroadcaster");
+                            let ws_addr = SocketAddr::new(
+                                args.node_args.flashblocks.flashblocks_addr.parse()?,
+                                args.node_args.flashblocks.flashblocks_port,
+                            );
+                        
+                            let metrics = Arc::new(OpRBuilderMetrics::default());
+                        
+                            let ws_pub = Arc::new(WebSocketPublisher::new(ws_addr, metrics)
+                                .map_err(|e| eyre::eyre!("Failed to create WebSocket publisher: {e}"))?);
+                        
+                            if let Some(flash_block_rx) = flash_block_rx {
+                                initialize_flashblocks_ws(ctx.node(), flash_block_rx, ws_pub);
+                                info!(target: "reth::cli", "xlayer flashblocks websocket rebroadcaster initialized");
+                            }
+                        }
+
                         info!(target: "reth::cli", "xlayer rpc extension enabled");
 
                         info!(message = "XLayer RPC modules initialized");

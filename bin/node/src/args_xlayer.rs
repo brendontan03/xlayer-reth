@@ -24,14 +24,6 @@ pub struct XLayerArgs {
         default_value = "false"
     )]
     pub enable_inner_tx: bool,
-
-    /// The port that we bind to for the websocket server that provides flashblocks
-    #[arg(long = "xlayer.rebroadcast-flashblocks-port", default_value = "2222")]
-    pub rebroadcast_flashblocks_port: u16,
-
-    /// The address that we bind to for the websocket server that provides flashblocks
-    #[arg(long = "xlayer.rebroadcast-flashblocks-addr", default_value = "127.0.0.1")]
-    pub rebroadcast_flashblocks_addr: String,
 }
 
 impl XLayerArgs {

@@ -2,7 +2,7 @@ use op_rbuilder::builders::WebSocketPublisher;
 use reth_node_api::FullNodeComponents;
 use reth_optimism_flashblocks::FlashBlockRx;
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 pub fn initialize_flashblocks_ws<Node>(
     node: &Node,

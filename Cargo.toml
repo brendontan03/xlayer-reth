@@ -15,7 +15,7 @@ resolver = "2"
 members = [
     "crates/apollo",
     "crates/chainspec",
-    "crates/flashblocks-ws",
+    "crates/flashblocks",
     "crates/innertx",
     "crates/rpc",
     "crates/tests",
@@ -62,7 +62,7 @@ codegen-units = 1
 # ------------------------------------------------------------------------------
 
 xlayer-chainspec = { path = "crates/chainspec" }
-xlayer-flashblocks-ws = { path = "crates/flashblocks-ws" }
+xlayer-flashblocks = { path = "crates/flashblocks" }
 xlayer-innertx = { path = "crates/innertx" }
 xlayer-reth-node = { path = "bin/node" }
 xlayer-rpc = { path = "crates/rpc" }
