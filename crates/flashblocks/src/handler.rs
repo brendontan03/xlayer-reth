@@ -67,7 +67,7 @@ where
                 result = self.flash_block_rx.recv() => {
                     match result {
                         Ok(flash_block) => {
-                            info!(
+                            debug!(
                                 target: "xlayer::flashblocks",
                                 "Received flashblock: index={}, block_hash={}",
                                 flash_block.index,
