@@ -86,7 +86,7 @@ where
     async fn publish_flashblock(&self, flashblock: &Arc<reth_optimism_flashblocks::FlashBlock>) {
         match self.ws_pub.publish_op_payload(&flashblock) {
             Ok(_) => {
-                info!(
+                debug!(
                     target: "xlayer::flashblocks",
                     "Published flashblock: index={}, block_hash={}",
                     flashblock.index,
