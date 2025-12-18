@@ -88,7 +88,7 @@ where
     }
 
     async fn publish_flashblock(&self, flash_block: &Arc<reth_optimism_flashblocks::FlashBlock>) {
-        match serde_json::to_string(&**flash_block) {
+        match serde_json::to_string(flash_block) {
             Ok(json) => match serde_json::from_str(&json) {
                 Ok(payload) => {
                     if let Err(e) = self.ws_pub.publish(&payload) {
