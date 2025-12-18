@@ -184,7 +184,7 @@ cargo test -p xlayer-e2e-test --test flashblocks_tests -- --nocapture --test-thr
 just test false true
 ```
 
-To run all flashblocks tests (including ignored tests), run:
+To run all flashblocks tests (including ignored tests, also requires 2nd RPC node to be running), run:
 ```
 cargo test -p xlayer-e2e-test --test flashblocks_tests -- --include-ignored --nocapture --test-threads=1
 ```

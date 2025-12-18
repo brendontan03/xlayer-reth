@@ -2,7 +2,7 @@
 //!
 //! Run flashblocks tests without benchmark and comparison tests: `cargo test -p xlayer-e2e-test --test flashblocks_tests -- --nocapture --test-threads=1`
 //! Run all tests (including ignored): `cargo test -p xlayer-e2e-test --test flashblocks_tests -- --include-ignored --nocapture --test-threads=1`
-//! Run a specific ignored test: `cargo test -p xlayer-e2e-test --test flashblocks_tests -- <test_case_name> --ignored --nocapture --test-threads=1`
+//! Run a specific test: `cargo test -p xlayer-e2e-test --test flashblocks_tests -- <test_case_name> --include-ignored --nocapture --test-threads=1`
 
 use alloy_primitives::{hex, keccak256, Address, U256};
 use alloy_sol_types::{sol, SolCall};
