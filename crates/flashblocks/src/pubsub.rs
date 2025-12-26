@@ -90,8 +90,6 @@ pub enum OpParams {
     Standard(AlloyParams),
     /// Flashblocks stream filter
     FlashBlocksFilter(FlashBlocksFilter),
-    /// No params
-    None,
 }
 
 impl<'de> Deserialize<'de> for OpParams {
@@ -100,10 +98,6 @@ impl<'de> Deserialize<'de> for OpParams {
         D: serde::Deserializer<'de>,
     {
         let value = serde_json::Value::deserialize(deserializer)?;
-
-        if value.is_null() {
-            return Ok(OpParams::None);
-        }
 
         if let Ok(filter) = serde_json::from_value::<FlashBlocksFilter>(value.clone()) {
             return Ok(OpParams::FlashBlocksFilter(filter));
@@ -127,7 +121,6 @@ impl Serialize for OpParams {
         match self {
             OpParams::Standard(params) => params.serialize(serializer),
             OpParams::FlashBlocksFilter(filter) => filter.serialize(serializer),
-            OpParams::None => serializer.serialize_none(),
         }
     }
 }
@@ -152,14 +145,12 @@ impl OpParams {
 
 /// Criteria for filtering and enriching flashblock subscription data.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct FlashBlocksFilter {
     /// Include new block headers in the stream.
-    #[serde(default)]
     pub header_info: bool,
 
     /// SubTxFilter
-    #[serde(default)]
     pub sub_tx_filter: SubTxFilter,
 }
 
@@ -172,18 +163,15 @@ impl FlashBlocksFilter {
 
 /// Criteria for filtering and enriching transaction subscription data.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct SubTxFilter {
     /// Include extra transaction information
-    #[serde(default)]
     pub tx_info: bool,
 
     /// Include transaction receipts.
-    #[serde(default)]
     pub tx_receipt: bool,
 
     /// Only include transactions involving these addresses
-    #[serde(default)]
     pub subscribe_addresses: Vec<Address>,
 }
 
@@ -234,7 +222,7 @@ pub trait FlashblocksPubSubApi<T: RpcObject> {
     )]
     async fn subscribe(
         &self,
-        kind: OpSubscriptionKind,
+        kind: FlashblockSubscriptionKind,
         params: Option<OpParams>,
     ) -> jsonrpsee::core::SubscriptionResult;
 }
@@ -245,8 +233,8 @@ pub struct FlashblocksPubSub<Eth: EthApiTypes, N: NodePrimitives> {
     eth_pubsub: EthPubSub<Eth>,
     /// Pending block receiver from flashblocks, if available
     pending_block_rx: PendingBlockRx<N>,
-    /// Direct reference to eth API for RPC conversion
-    eth_api: Eth,
+    /// RPC transaction converter
+    tx_converter: Eth::RpcConvert,
 }
 
 impl<Eth: EthApiTypes, N: NodePrimitives> Clone for FlashblocksPubSub<Eth, N>
@@ -258,18 +246,19 @@ where
         Self {
             eth_pubsub: self.eth_pubsub.clone(),
             pending_block_rx: self.pending_block_rx.clone(),
-            eth_api: self.eth_api.clone(),
+            tx_converter: self.tx_converter.clone(),
         }
     }
 }
 
+impl<Eth: EthApiTypes, N: NodePrimitives> FlashblocksPubSub<Eth, N> {
     /// Creates a new `FlashblocksPubSub` instance.
     pub fn new(
         eth_pubsub: EthPubSub<Eth>,
         pending_block_rx: PendingBlockRx<N>,
-        eth_api: Eth,
+        tx_converter: Eth::RpcConvert,
     ) -> Self {
-        Self { eth_pubsub, pending_block_rx, eth_api }
+        Self { eth_pubsub, pending_block_rx, tx_converter }
     }
 
     /// Converts this `FlashblocksPubSub` into an RPC module.
@@ -346,15 +335,15 @@ where
         let sink = pending.accept().await?;
         let pending_block_rx = pending_block_rx.clone();
         let filter = filter.clone();
-        let api = self.eth_api.clone();
+        let tx_converter = self.tx_converter.clone();
 
         let flashblocks_stream =
             WatchStream::new(pending_block_rx).filter_map(move |pending_block_opt| {
                 let filter = filter.clone();
-                let api = api.clone();
+                let tx_converter = tx_converter.clone();
                 async move {
                     pending_block_opt.and_then(|pending_block| {
-                        Self::filter_and_enrich_flashblock(&pending_block, &filter, &api)
+                        Self::filter_and_enrich_flashblock(&pending_block, &filter, &tx_converter)
                     })
                 }
             });
@@ -371,7 +360,7 @@ where
     fn filter_and_enrich_flashblock(
         pending_block: &PendingFlashBlock<N>,
         filter: &FlashBlocksFilter,
-        api: &Eth,
+        tx_converter: &Eth::RpcConvert,
     ) -> Option<
         EnrichedFlashblock<
             N::BlockHeader,
@@ -394,7 +383,6 @@ where
         let block = pending_block.block();
         let receipts = pending_block.receipts.as_ref();
         let sealed_block = block.sealed_block();
-        let tx_converter = api.tx_resp_builder();
 
         let transactions: Vec<
             EnrichedTransaction<

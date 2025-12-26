@@ -21,6 +21,7 @@ use reth::{
 use reth_optimism_cli::Cli;
 use reth_optimism_node::OpNode;
 
+use reth_rpc_eth_api::EthApiTypes;
 use reth_rpc_server_types::RethRpcModule;
 use xlayer_chainspec::XLayerChainSpecParser;
 use xlayer_flashblocks::handler::FlashblocksService;
@@ -236,13 +237,13 @@ fn main() {
                             warn!(target: "reth::cli", "unable to get flashblock receiver, xlayer flashblocks service not initialized");
                         }
 
-                        if let Some(pending_blocks_rx) = ctx.registry.eth_api().pending_block_rx() {
+                        if let Some(pending_blocks_rx) = new_op_eth_api.pending_block_rx() {
                             let eth_pubsub = ctx.registry.eth_handlers().pubsub.clone();
 
                             let flashblocks_pubsub = FlashblocksPubSub::new(
                                 eth_pubsub,
                                 pending_blocks_rx,
-                                ctx.registry.eth_api().clone(),
+                                ctx.registry.eth_api().tx_resp_builder().clone(),
                             );
                             ctx.modules.add_or_replace_if_module_configured(
                                 RethRpcModule::Eth,
