@@ -1092,7 +1092,6 @@ async fn fb_eth_subscribe_test() -> Result<()> {
 
     let num_txs = 3;
 
-    // Send all transactions first
     let mut remaining: HashSet<String> = HashSet::new();
     for i in 0..num_txs {
         let tx_hash = operations::native_balance_transfer(
@@ -1110,7 +1109,6 @@ async fn fb_eth_subscribe_test() -> Result<()> {
         total, WEB_SOCKET_TIMEOUT
     );
 
-    // Wait for all transactions with a single timeout
     let result = tokio::time::timeout(WEB_SOCKET_TIMEOUT, async {
         while !remaining.is_empty() {
             match subscription.next().await {
@@ -1130,7 +1128,6 @@ async fn fb_eth_subscribe_test() -> Result<()> {
                     }
 
                     for tx in transactions {
-                        // Validate required fields based on our filter settings
                         assert!(
                             tx.get("txData").is_some(),
                             "txData field should be present when txInfo is true"
