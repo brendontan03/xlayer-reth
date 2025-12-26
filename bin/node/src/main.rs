@@ -243,7 +243,7 @@ fn main() {
                             let flashblocks_pubsub = FlashblocksPubSub::new(
                                 eth_pubsub,
                                 pending_blocks_rx,
-                                ctx.registry.eth_api().tx_resp_builder().clone(),
+                                new_op_eth_api.tx_resp_builder().clone(),
                             );
                             ctx.modules.add_or_replace_if_module_configured(
                                 RethRpcModule::Eth,
