@@ -6,23 +6,34 @@ use alloy_consensus::{transaction::TxHashRef, BlockHeader as _, Transaction as _
 use alloy_json_rpc::RpcObject;
 use alloy_primitives::Address;
 use alloy_rpc_types_eth::{Header, TransactionInfo};
-use futures::StreamExt;
+use futures::{stream::select, StreamExt};
 use jsonrpsee::{
     proc_macros::rpc, server::SubscriptionMessage, types::ErrorObject, PendingSubscriptionSink,
     SubscriptionSink,
 };
-use reth_chain_state::CanonStateSubscriptions;
+use reth_chain_state::{CanonStateNotification, CanonStateSubscriptions};
 use reth_optimism_flashblocks::{PendingBlockRx, PendingFlashBlock};
-use reth_primitives_traits::{NodePrimitives, Recovered, SealedBlock, TransactionMeta};
+use reth_primitives_traits::{
+    NodePrimitives, Recovered, RecoveredBlock, SealedBlock, TransactionMeta,
+};
 use reth_rpc::eth::pubsub::EthPubSub;
 use reth_rpc_convert::{transaction::ConvertReceiptInput, RpcConvert};
 use reth_rpc_eth_api::{EthApiTypes, RpcNodeCore, RpcReceipt, RpcTransaction};
 use reth_rpc_server_types::result::{internal_rpc_err, invalid_params_rpc_err};
-use reth_storage_api::BlockNumReader;
+use reth_storage_api::{BlockNumReader, ReceiptProvider};
 use reth_tasks::TaskSpawner;
+use reth_tracing::tracing::{error, warn};
 use serde::Serialize;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::{future::ready, sync::Arc};
-use tokio_stream::{wrappers::WatchStream, Stream};
+use tokio::sync::broadcast;
+use tokio::sync::broadcast::Sender;
+use tokio_stream::{
+    wrappers::{BroadcastStream, WatchStream},
+    Stream,
+};
+
+const CHANNEL_CAPACITY: usize = 100;
 
 type FlashblockItem<N, C> = EnrichedFlashblock<
     <N as NodePrimitives>::BlockHeader,
@@ -53,17 +64,21 @@ pub trait FlashblocksPubSubApi<T: RpcObject> {
 
 /// Optimism-specific Ethereum pubsub handler that extends standard subscriptions with flashblocks support.
 #[derive(Clone)]
-pub struct FlashblocksPubSub<Eth: EthApiTypes, N: NodePrimitives> {
+pub struct FlashblocksPubSub<Eth: EthApiTypes, N: NodePrimitives, Provider> {
     /// Standard eth pubsub handler
     eth_pubsub: EthPubSub<Eth>,
     /// All nested flashblocks fields bundled together
-    inner: Arc<FlashblocksPubSubInner<Eth, N>>,
+    inner: Arc<FlashblocksPubSubInner<Eth, N, Provider>>,
 }
 
-impl<Eth: EthApiTypes, N: NodePrimitives> FlashblocksPubSub<Eth, N>
+impl<Eth: EthApiTypes, N: NodePrimitives, Provider> FlashblocksPubSub<Eth, N, Provider>
 where
     Eth: RpcNodeCore<Primitives = N> + 'static,
     Eth::Provider: BlockNumReader + CanonStateSubscriptions<Primitives = N>,
+    Provider: ReceiptProvider<Receipt = N::Receipt>
+        + CanonStateSubscriptions<Primitives = N>
+        + Clone
+        + 'static,
     Eth::RpcConvert: RpcConvert<Primitives = N> + Clone,
 {
     /// Creates a new, shareable instance.
@@ -74,18 +89,37 @@ where
         pending_block_rx: PendingBlockRx<N>,
         subscription_task_spawner: Box<dyn TaskSpawner>,
         tx_converter: Eth::RpcConvert,
+        provider: Provider,
     ) -> Self {
-        let inner =
-            FlashblocksPubSubInner { pending_block_rx, subscription_task_spawner, tx_converter };
+        let (canonical_state_tx, _) = broadcast::channel(CHANNEL_CAPACITY);
+
+        let broadcast_tx = canonical_state_tx.clone();
+        let provider_clone = provider.clone();
+        subscription_task_spawner.spawn(Box::pin(async move {
+            let mut stream = provider_clone.canonical_state_stream();
+            while let Some(notification) = stream.next().await {
+                let _ = broadcast_tx.send(notification);
+            }
+        }));
+
+        let inner = FlashblocksPubSubInner {
+            pending_block_rx,
+            canonical_state_tx,
+            flashblocks_height: Arc::new(AtomicU64::new(0)),
+            subscription_task_spawner,
+            tx_converter,
+            provider,
+        };
         Self { eth_pubsub, inner: Arc::new(inner) }
     }
 
     /// Converts this `FlashblocksPubSub` into an RPC module.
     pub fn into_rpc(self) -> jsonrpsee::RpcModule<()>
     where
-        FlashblocksPubSub<Eth, N>: FlashblocksPubSubApiServer<RpcTransaction<Eth::NetworkTypes>>,
+        FlashblocksPubSub<Eth, N, Provider>:
+            FlashblocksPubSubApiServer<RpcTransaction<Eth::NetworkTypes>>,
     {
-        <FlashblocksPubSub<Eth, N> as FlashblocksPubSubApiServer<
+        <FlashblocksPubSub<Eth, N, Provider> as FlashblocksPubSubApiServer<
             RpcTransaction<Eth::NetworkTypes>,
         >>::into_rpc(self)
         .remove_context()
@@ -149,7 +183,11 @@ where
                 let standard_params = match params {
                     Some(FlashblockParams::Standard(p)) => Some(p),
                     None => None,
-                    _ => return Err(invalid_params_rpc_err("invalid params for standard eth subscription")),
+                    _ => {
+                        return Err(invalid_params_rpc_err(
+                            "invalid params for standard eth subscription",
+                        ))
+                    }
                 };
                 self.eth_pubsub.handle_accepted(accepted_sink, alloy_kind, standard_params).await
             }
@@ -158,11 +196,16 @@ where
 }
 
 #[async_trait::async_trait]
-impl<Eth: EthApiTypes, N: NodePrimitives>
-    FlashblocksPubSubApiServer<RpcTransaction<Eth::NetworkTypes>> for FlashblocksPubSub<Eth, N>
+impl<Eth: EthApiTypes, N: NodePrimitives, Provider>
+    FlashblocksPubSubApiServer<RpcTransaction<Eth::NetworkTypes>>
+    for FlashblocksPubSub<Eth, N, Provider>
 where
     Eth: RpcNodeCore<Primitives = N> + 'static,
     Eth::Provider: BlockNumReader + CanonStateSubscriptions<Primitives = N>,
+    Provider: ReceiptProvider<Receipt = N::Receipt>
+        + CanonStateSubscriptions<Primitives = N>
+        + Clone
+        + 'static,
     Eth::RpcConvert: RpcConvert<Primitives = N> + Clone,
 {
     async fn subscribe(
@@ -188,19 +231,25 @@ where
 }
 
 #[derive(Clone)]
-pub struct FlashblocksPubSubInner<Eth: EthApiTypes, N: NodePrimitives> {
+pub struct FlashblocksPubSubInner<Eth: EthApiTypes, N: NodePrimitives, Provider> {
     /// Pending block receiver from flashblocks, if available
     pub(crate) pending_block_rx: PendingBlockRx<N>,
+    /// Canonical state notifications broadcaster
+    pub(crate) canonical_state_tx: Sender<CanonStateNotification<N>>,
+    /// Tracks the highest block number seen from flashblocks
+    pub(crate) flashblocks_height: Arc<AtomicU64>,
     /// The type that's used to spawn subscription tasks.
     pub(crate) subscription_task_spawner: Box<dyn TaskSpawner>,
     /// RPC transaction converter
     pub(crate) tx_converter: Eth::RpcConvert,
+    /// Provider for fetching receipts from storage
+    pub(crate) provider: Provider,
 }
 
-impl<Eth: EthApiTypes, N: NodePrimitives> FlashblocksPubSubInner<Eth, N>
+impl<Eth: EthApiTypes, N: NodePrimitives, Provider> FlashblocksPubSubInner<Eth, N, Provider>
 where
     Eth: RpcNodeCore<Primitives = N> + 'static,
-    Eth::Provider: BlockNumReader + CanonStateSubscriptions<Primitives = N>,
+    Provider: ReceiptProvider<Receipt = N::Receipt> + Clone + 'static,
     Eth::RpcConvert: RpcConvert<Primitives = N> + Clone,
 {
     fn new_flashblocks_stream(
@@ -208,11 +257,59 @@ where
         filter: FlashblocksFilter,
     ) -> impl Stream<Item = FlashblockItem<N, Eth::RpcConvert>> {
         let tx_converter = self.tx_converter.clone();
-        WatchStream::new(self.pending_block_rx.clone()).filter_map(move |pending_block_opt| {
-            ready(pending_block_opt.and_then(|pending_block| {
-                Self::filter_and_enrich_flashblock(&pending_block, &filter, &tx_converter)
-            }))
-        })
+        let filter_clone = filter.clone();
+
+        let flashblocks_stream =
+            WatchStream::new(self.pending_block_rx.clone()).filter_map(move |pending_block_opt| {
+                ready(pending_block_opt.and_then(|pending_block| {
+                    let block_number = pending_block.block().sealed_block().number();
+                    self.flashblocks_height.fetch_max(block_number, Ordering::Relaxed);
+
+                    Self::filter_and_enrich_flashblock(&pending_block, &filter_clone, &tx_converter)
+                }))
+            });
+
+        // Stream from canonical state (as backup when flashblocks falls behind)
+        let canonical_stream =
+            BroadcastStream::new(self.canonical_state_tx.subscribe()).flat_map(move |result| {
+                let notification = match result {
+                    Ok(n) => n,
+                    Err(_) => return futures::stream::iter(vec![]),
+                };
+
+                let flashblocks_height_val = self.flashblocks_height.load(Ordering::Relaxed);
+
+                let chain = match notification {
+                    CanonStateNotification::Commit { new } => new,
+                    CanonStateNotification::Reorg { old: _, new } => new,
+                };
+
+                futures::stream::iter(
+                    chain
+                        .blocks_iter()
+                        .filter_map(|block| {
+                            if block.number() > flashblocks_height_val {
+                                warn!(
+                                    target: "xlayer::flashblocks",
+                                    block_number = block.number(),
+                                    flashblocks_height = flashblocks_height_val,
+                                    "Canonical state fallback activated - flashblocks is behind"
+                                );
+                                Self::filter_and_enrich_canonical_block(
+                                    block,
+                                    &self.provider,
+                                    &filter,
+                                    &self.tx_converter,
+                                )
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            });
+
+        select(flashblocks_stream, canonical_stream)
     }
 
     /// Filter and enrich a flashblock based on the provided filter criteria.
@@ -225,7 +322,7 @@ where
             Some(match extract_header_from_pending_block(pending_block) {
                 Ok(h) => h,
                 Err(e) => {
-                    tracing::warn!("Failed to extract header: {e:?}");
+                    warn!(target: "xlayer::flashblocks", error = ?e, "Failed to extract header");
                     return None;
                 }
             })
@@ -237,7 +334,75 @@ where
         let receipts = pending_block.receipts.as_ref();
         let sealed_block = block.sealed_block();
 
-        let transactions: Vec<EnrichedTxItem<Eth::RpcConvert>> = block
+        let transactions =
+            Self::collect_transactions(block, filter, receipts, tx_converter, sealed_block);
+
+        if filter.sub_tx_filter.has_address_filter() && transactions.is_empty() {
+            return None;
+        }
+
+        Some(EnrichedFlashblock { header, transactions })
+    }
+
+    fn filter_and_enrich_canonical_block(
+        block: &RecoveredBlock<N::Block>,
+        provider: &Provider,
+        filter: &FlashblocksFilter,
+        tx_converter: &Eth::RpcConvert,
+    ) -> Option<FlashblockItem<N, Eth::RpcConvert>> {
+        let header = if filter.header_info {
+            let sealed_header = block.clone_sealed_header();
+            Some(Header::from_consensus(sealed_header.into(), None, None))
+        } else {
+            None
+        };
+
+        let sealed_block = block.sealed_block();
+
+        let receipts_result =
+            provider.receipts_by_block(alloy_eips::BlockHashOrNumber::Hash(sealed_block.hash()));
+
+        let receipts_vec = match receipts_result {
+            Ok(Some(receipts)) => receipts,
+            Ok(None) => {
+                error!(
+                    target: "xlayer::flashblocks",
+                    block_number = sealed_block.number(),
+                    block_hash = ?sealed_block.hash(),
+                    "No receipts found in storage for canonical block"
+                );
+                vec![]
+            }
+            Err(e) => {
+                error!(
+                    target: "xlayer::flashblocks",
+                    block_number = sealed_block.number(),
+                    block_hash = ?sealed_block.hash(),
+                    error = ?e,
+                    "Failed to fetch receipts from provider"
+                );
+                vec![]
+            }
+        };
+
+        let transactions =
+            Self::collect_transactions(block, filter, &receipts_vec, tx_converter, sealed_block);
+
+        if filter.sub_tx_filter.has_address_filter() && transactions.is_empty() {
+            return None;
+        }
+
+        Some(EnrichedFlashblock { header, transactions })
+    }
+
+    fn collect_transactions(
+        block: &RecoveredBlock<N::Block>,
+        filter: &FlashblocksFilter,
+        receipts: &[N::Receipt],
+        tx_converter: &Eth::RpcConvert,
+        sealed_block: &SealedBlock<N::Block>,
+    ) -> Vec<EnrichedTxItem<Eth::RpcConvert>> {
+        let transactions = block
             .transactions_with_sender()
             .enumerate()
             .filter_map(|(idx, (sender, tx))| {
@@ -282,11 +447,7 @@ where
             })
             .collect();
 
-        if filter.sub_tx_filter.has_address_filter() && transactions.is_empty() {
-            return None;
-        }
-
-        Some(EnrichedFlashblock { header, transactions })
+        transactions
     }
 
     /// Enrich transaction data if requested in filter
