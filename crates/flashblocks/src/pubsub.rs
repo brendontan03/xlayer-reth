@@ -205,31 +205,31 @@ impl SubTxFilter {
     }
 }
 
-/// Flashblock data returned to subscribers based on FlashBlocksFilter.
+/// Flashblock data returned to subscribers based on `FlashBlocksFilter`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnrichedFlashblock<H, Tx, R> {
-    /// Block header (if `header_info` is true in criteria)
+    /// Block header (if `header_info` is true in filter criteria).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub header: Option<Header<H>>,
 
-    /// Filtered transactions with optional enrichment
+    /// Filtered transactions with optional enrichment.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub transactions: Vec<EnrichedTransaction<Tx, R>>,
 }
 
-/// Transaction data with optional enrichment based on FlashBlocksFilter.
+/// Transaction data with optional enrichment based on `FlashBlocksFilter`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnrichedTransaction<Tx, R> {
-    /// Transaction hash
+    /// Transaction hash.
     pub tx_hash: alloy_primitives::TxHash,
 
-    /// Transaction data (if `tx_info` is true in criteria)
+    /// Transaction data (if `tx_info` is true in filter criteria).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tx_data: Option<Tx>,
 
-    /// Transaction receipt (if `tx_receipt` is true in criteria)
+    /// Transaction receipt (if `tx_receipt` is true in filter criteria).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub receipt: Option<R>,
 }
