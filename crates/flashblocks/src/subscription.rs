@@ -46,6 +46,16 @@ type EnrichedTxItem<C> = EnrichedTransaction<
     RpcReceipt<<C as RpcConvert>::Network>,
 >;
 
+/// Context for enriching transactions and receipts from a block
+struct EnrichmentContext<'a, N: NodePrimitives, C> {
+    tx: &'a N::SignedTx,
+    sender: Address,
+    idx: usize,
+    tx_hash: alloy_primitives::TxHash,
+    sealed_block: &'a SealedBlock<N::Block>,
+    tx_converter: &'a C,
+}
+
 /// Flashblocks pubsub RPC interface.
 #[rpc(server, namespace = "eth")]
 pub trait FlashblocksPubSubApi<T: RpcObject> {
@@ -402,7 +412,7 @@ where
         tx_converter: &Eth::RpcConvert,
         sealed_block: &SealedBlock<N::Block>,
     ) -> Vec<EnrichedTxItem<Eth::RpcConvert>> {
-        let transactions = block
+        block
             .transactions_with_sender()
             .enumerate()
             .filter_map(|(idx, (sender, tx))| {
@@ -421,60 +431,45 @@ where
                 let receipt = receipts.get(idx)?;
                 let tx_hash = *tx.tx_hash();
 
-                let tx_data = Self::enrich_transaction_data(
-                    filter,
+                let ctx = EnrichmentContext {
                     tx,
-                    *sender,
+                    sender: *sender,
                     idx,
                     tx_hash,
                     sealed_block,
                     tx_converter,
-                );
+                };
 
-                let tx_receipt = Self::enrich_receipt(
-                    filter,
-                    receipt,
-                    tx,
-                    *sender,
-                    idx,
-                    tx_hash,
-                    receipts,
-                    sealed_block,
-                    tx_converter,
-                );
+                let tx_data = Self::enrich_transaction_data(filter, &ctx);
+                let tx_receipt = Self::enrich_receipt(filter, receipt, receipts, &ctx);
 
                 Some(EnrichedTransaction { tx_hash, tx_data, receipt: tx_receipt })
             })
-            .collect();
-
-        transactions
+            .collect()
     }
 
     /// Enrich transaction data if requested in filter
     fn enrich_transaction_data(
         filter: &FlashblocksFilter,
-        tx: &N::SignedTx,
-        sender: Address,
-        idx: usize,
-        tx_hash: alloy_primitives::TxHash,
-        sealed_block: &SealedBlock<N::Block>,
-        rpc_convert: &Eth::RpcConvert,
+        ctx: &EnrichmentContext<'_, N, Eth::RpcConvert>,
     ) -> Option<RpcTransaction<<Eth::RpcConvert as RpcConvert>::Network>> {
         if !filter.sub_tx_filter.tx_info {
             return None;
         }
 
-        let recovered = reth_primitives_traits::Recovered::new_unchecked(tx.clone(), sender);
+        let recovered =
+            reth_primitives_traits::Recovered::new_unchecked(ctx.tx.clone(), ctx.sender);
 
-        let rpc_tx = rpc_convert
+        let rpc_tx = ctx
+            .tx_converter
             .fill(
                 recovered,
                 TransactionInfo {
-                    hash: Some(tx_hash),
-                    index: Some(idx as u64),
-                    block_hash: Some(sealed_block.hash()),
-                    block_number: Some(sealed_block.header().number()),
-                    base_fee: sealed_block.header().base_fee_per_gas(),
+                    hash: Some(ctx.tx_hash),
+                    index: Some(ctx.idx as u64),
+                    block_hash: Some(ctx.sealed_block.hash()),
+                    block_number: Some(ctx.sealed_block.header().number()),
+                    base_fee: ctx.sealed_block.header().base_fee_per_gas(),
                 },
             )
             .ok()?;
@@ -486,13 +481,8 @@ where
     fn enrich_receipt(
         filter: &FlashblocksFilter,
         receipt: &N::Receipt,
-        tx: &N::SignedTx,
-        sender: Address,
-        idx: usize,
-        tx_hash: alloy_primitives::TxHash,
         receipts: &[N::Receipt],
-        sealed_block: &SealedBlock<N::Block>,
-        tx_converter: &Eth::RpcConvert,
+        ctx: &EnrichmentContext<'_, N, Eth::RpcConvert>,
     ) -> Option<RpcReceipt<<Eth::RpcConvert as RpcConvert>::Network>> {
         if !filter.sub_tx_filter.tx_receipt {
             return None;
@@ -500,26 +490,28 @@ where
 
         let gas_used = receipt.cumulative_gas_used();
 
-        let next_log_index = receipts.iter().take(idx).map(|r| r.logs().len()).sum::<usize>();
+        let next_log_index = receipts.iter().take(ctx.idx).map(|r| r.logs().len()).sum::<usize>();
 
         let receipt_input = ConvertReceiptInput {
             receipt: receipt.clone(),
-            tx: Recovered::new_unchecked(tx, sender),
+            tx: Recovered::new_unchecked(ctx.tx, ctx.sender),
             gas_used,
             next_log_index,
             meta: TransactionMeta {
-                tx_hash,
-                index: idx as u64,
-                block_hash: sealed_block.hash(),
-                block_number: sealed_block.header().number(),
-                base_fee: sealed_block.header().base_fee_per_gas(),
-                excess_blob_gas: sealed_block.header().excess_blob_gas(),
-                timestamp: sealed_block.header().timestamp(),
+                tx_hash: ctx.tx_hash,
+                index: ctx.idx as u64,
+                block_hash: ctx.sealed_block.hash(),
+                block_number: ctx.sealed_block.header().number(),
+                base_fee: ctx.sealed_block.header().base_fee_per_gas(),
+                excess_blob_gas: ctx.sealed_block.header().excess_blob_gas(),
+                timestamp: ctx.sealed_block.header().timestamp(),
             },
         };
 
-        let rpc_receipts =
-            tx_converter.convert_receipts_with_block(vec![receipt_input], sealed_block).ok()?;
+        let rpc_receipts = ctx
+            .tx_converter
+            .convert_receipts_with_block(vec![receipt_input], ctx.sealed_block)
+            .ok()?;
 
         rpc_receipts.first().cloned()
     }
