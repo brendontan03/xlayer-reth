@@ -1066,11 +1066,6 @@ async fn fb_eth_subscribe_test() -> Result<()> {
     let ws_url = operations::manager::DEFAULT_WEBSOCKET_URL;
     let sender_address = operations::DEFAULT_RICH_ADDRESS;
     let test_address = operations::DEFAULT_L2_NEW_ACC1_ADDRESS;
-    let fb_client = operations::create_test_client(operations::DEFAULT_L2_NETWORK_URL_FB);
-
-    let current_block_number =
-        operations::eth_block_number(&fb_client).await.expect("Failed to get current block number");
-    println!("Current block number: {}", current_block_number);
 
     println!("Connecting to flashblocks WebSocket at {ws_url}...");
     let ws_client = operations::websocket::EthWebSocketClient::connect(ws_url).await?;
