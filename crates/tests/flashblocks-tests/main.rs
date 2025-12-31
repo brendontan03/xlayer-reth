@@ -1061,7 +1061,6 @@ async fn fb_eth_subscribe_test() -> Result<()> {
     let ws_client = operations::websocket::EthWebSocketClient::connect(ws_url).await?;
     println!("Connected successfully");
 
-    // Subscribe to flashblocks with specific parameters
     let subscription_params = json!({
         "headerInfo": true,
         "subTxFilter": {
@@ -1182,7 +1181,6 @@ async fn fb_benchmark_new_heads_subscription_test() -> Result<()> {
     let ws_client = operations::websocket::EthWebSocketClient::connect(ws_url).await?;
     println!("Connected successfully");
 
-    // Subscribe to flashblocks with specific parameters
     let subscription_params = json!({
         "headerInfo": true
     });
@@ -1195,7 +1193,6 @@ async fn fb_benchmark_new_heads_subscription_test() -> Result<()> {
         ws_client.subscribe("newHeads", None).await?;
     println!("Eth newHeads subscription created successfully");
 
-    // Benchmark variables
     let mut total_sub_time_diff = Duration::ZERO;
     let mut heights = HashMap::<u64, Instant>::new();
     let mut count = 0;
@@ -1273,7 +1270,6 @@ async fn fb_benchmark_new_transactions_subscription_test() -> Result<()> {
     let ws_client = operations::websocket::EthWebSocketClient::connect(ws_url).await?;
     println!("Connected successfully");
 
-    // Subscribe to flashblocks (realtime) with specific parameters
     let subscription_params = json!({
         "headerInfo": true,
         "subTxFilter": {
@@ -1292,7 +1288,6 @@ async fn fb_benchmark_new_transactions_subscription_test() -> Result<()> {
     for i in 0..ITERATIONS {
         println!("\n--- Iteration {i} ---");
 
-        // Send native balance transfer
         let tx_hash = operations::native_balance_transfer(
             operations::DEFAULT_L2_NETWORK_URL_FB,
             U256::from(operations::GWEI),
