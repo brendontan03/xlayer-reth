@@ -626,6 +626,7 @@ where
                 let block_num = item.block_number();
 
                 if block_num > highest_canon_block {
+                    highest_canon_block = block_num;
                     sent_tx_events.retain(|(b, _)| *b >= highest_canon_block);
                 }
 
@@ -642,7 +643,6 @@ where
                     continue;
                 }
 
-                highest_canon_block = block_num;
                 let msg = SubscriptionMessage::new(
                     sink.method_name(),
                     sink.subscription_id(),
