@@ -127,30 +127,6 @@ where
         self.inner.new_canonical_state_stream(filter)
     }
 
-    fn validate_params(
-        &self,
-        kind: &FlashblockSubscriptionKind,
-        params: &Option<FlashblockParams>,
-    ) -> Result<(), ErrorObject<'static>> {
-        match kind {
-            FlashblockSubscriptionKind::Flashblocks => {
-                let Some(FlashblockParams::FlashblocksFilter(_)) = params else {
-                    return Err(invalid_params_rpc_err("invalid params for flashblocks"));
-                };
-
-                Ok(())
-            }
-            FlashblockSubscriptionKind::Standard(_) => {
-                if matches!(params, Some(FlashblockParams::FlashblocksFilter(_))) {
-                    return Err(invalid_params_rpc_err(
-                        "invalid params, incorrect filter provided for standard eth subscription type",
-                    ));
-                }
-                Ok(())
-            }
-        }
-    }
-
     async fn handle_accepted(
         &self,
         accepted_sink: SubscriptionSink,
@@ -207,12 +183,6 @@ where
         kind: FlashblockSubscriptionKind,
         params: Option<FlashblockParams>,
     ) -> jsonrpsee::core::SubscriptionResult {
-        // Validate and reject with error message if invalid
-        if let Err(err) = self.validate_params(&kind, &params) {
-            pending.reject(err).await;
-            return Ok(());
-        }
-
         let sink = pending.accept().await?;
         let pubsub = self.clone();
         self.inner.subscription_task_spawner.spawn(Box::pin(async move {
@@ -315,12 +285,14 @@ where
             }
         }
 
-        let transactions =
-            Self::collect_transactions(block, filter, receipts, tx_converter, sealed_block);
-
-        for transaction in transactions {
-            events.push(FlashblockStreamEvent::Transaction { block_number, transaction });
-        }
+        events.extend(
+            Self::collect_transactions(block, filter, receipts, tx_converter, sealed_block)
+                .into_iter()
+                .map(|transaction| FlashblockStreamEvent::Transaction {
+                    block_number,
+                    transaction,
+                }),
+        );
 
         events
     }
@@ -369,12 +341,14 @@ where
             events.push(FlashblockStreamEvent::Header { block_number, header });
         }
 
-        let transactions =
-            Self::collect_transactions(block, filter, &receipts_vec, tx_converter, sealed_block);
-
-        for transaction in transactions {
-            events.push(FlashblockStreamEvent::Transaction { block_number, transaction });
-        }
+        events.extend(
+            Self::collect_transactions(block, filter, &receipts_vec, tx_converter, sealed_block)
+                .into_iter()
+                .map(|transaction| FlashblockStreamEvent::Transaction {
+                    block_number,
+                    transaction,
+                }),
+        );
 
         events
     }
