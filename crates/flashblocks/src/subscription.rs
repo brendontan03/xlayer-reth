@@ -311,7 +311,6 @@ where
                 }
                 Err(e) => {
                     warn!(target: "xlayer::flashblocks", error = ?e, "Failed to extract header");
-                    return vec![];
                 }
             }
         }
@@ -594,6 +593,7 @@ where
                         true
                     }
                     FlashblockStreamEvent::Transaction { block_number, transaction } => {
+                        // Return true if we haven't sent this (block, tx_hash) pair yet
                         sent_tx_events.insert((*block_number, transaction.tx_hash))
                     }
                 };
@@ -635,6 +635,7 @@ where
                         *block_number > highest_fb_block
                     }
                     FlashblockStreamEvent::Transaction { block_number, transaction } => {
+                        // Return true if we haven't sent this (block, tx_hash) pair yet
                         sent_tx_events.insert((*block_number, transaction.tx_hash))
                     }
                 };
