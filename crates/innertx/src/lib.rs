@@ -5,5 +5,4 @@ pub mod db_utils;
 pub mod innertx_inspector;
 pub mod replay_utils;
 pub mod rpc_utils;
-pub mod structs;
 pub mod subscriber_utils;
