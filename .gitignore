@@ -16,4 +16,4 @@ tests/merged.genesis.json.tar.gz
 tests/genesis-testnet-reth.json
 
 # Local development: cargo config for debugging with local reth
-.cargo
+# .cargo
