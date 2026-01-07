@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use args_xlayer::XLayerArgs;
 use clap::Parser;
-use tracing::{info, warn};
 use tower::layer::util::Stack;
+use tracing::{info, warn};
 
 use op_rbuilder::{
     args::OpRbuilderArgs,
@@ -26,9 +26,9 @@ use reth_rpc_server_types::RethRpcModule;
 use xlayer_chainspec::XLayerChainSpecParser;
 use xlayer_flashblocks::handler::FlashblocksService;
 use xlayer_flashblocks::subscription::FlashblocksPubSub;
+use xlayer_innertx::layer::InnerTxLayer;
 use xlayer_legacy_rpc::{layer::LegacyRpcRouterLayer, LegacyRpcRouterConfig};
 use xlayer_rpc::xlayer_ext::{XlayerRpcExt, XlayerRpcExtApiServer};
-use xlayer_innertx::layer::InnerTxLayer;
 
 #[global_allocator]
 static ALLOC: reth_cli_util::allocator::Allocator = reth_cli_util::allocator::new_allocator();
