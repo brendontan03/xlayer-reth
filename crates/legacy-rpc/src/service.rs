@@ -161,6 +161,8 @@ where
     fn call<'a>(&self, req: Request<'a>) -> impl Future<Output = Self::MethodResponse> + Send + 'a {
         let method = req.method_name();
 
+        debug!(target:"xlayer_legacy_rpc", "calling legacy middleware, method = {}", method);
+
         // Early return - no boxing, direct passthrough
         if !self.config.enabled || !is_legacy_routable(method) {
             return Either::Left(self.inner.call(req));

@@ -7,6 +7,7 @@ use std::sync::Arc;
 use args_xlayer::XLayerArgs;
 use clap::Parser;
 use tracing::{info, warn};
+use tower::layer::util::Stack;
 
 use op_rbuilder::{
     args::OpRbuilderArgs,
@@ -81,10 +82,17 @@ fn main() {
             };
 
             // Build add-ons with RPC middleware
-            // If not enabled, the layer will not do any re-routing.
+            // Manually compose middleware layers using tower::layer::util::Stack
+            // IMPORTANT: Stack applies layers in reverse order!
+            // Stack::new(inner, outer).layer(service) does: outer.layer(inner.layer(service))
+            // So Stack(Legacy, InnerTx) creates: InnerTx -> Legacy -> base service
+            let composed_middleware = Stack::new(
+                LegacyRpcRouterLayer::new(legacy_config),   // Gets applied first (inner)
+                InnerTxLayer::new()                          // Gets applied second (outer, runs first)
+            );
+
             let add_ons = op_node.add_ons()
-                .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config))
-                .with_rpc_middleware(InnerTxLayer::new()); // This runs first
+                .with_rpc_middleware(composed_middleware);
 
             // Should run as sequencer if flashblocks.enabled = true. Doing so means you are
             // running a flashblocks producing sequencer.

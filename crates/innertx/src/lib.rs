@@ -11,10 +11,11 @@ use jsonrpsee::{
     types::Request,
     MethodResponse,
 };
+use tracing::debug;
 
 #[derive(Clone)]
-pub struct InnerTxService<I> {
-    inner: I, // how we will forward to next layer
+pub struct InnerTxService<S> {
+    inner: S, // how we will forward to next layer
 }
 
 impl<S> RpcServiceT for InnerTxService<S>
@@ -26,6 +27,10 @@ where
     type BatchResponse = S::BatchResponse;
 
     fn call<'a>(&self, req: Request<'a>) -> impl Future<Output = Self::MethodResponse> + Send + 'a {
+        let method = req.method_name();
+
+        debug!(target:"xlayer_innertx", "calling innertx middleware, method = {}", method);
+
         self.inner.call(req)
     }
 
