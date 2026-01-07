@@ -13,16 +13,15 @@ use op_rbuilder::{
     args::OpRbuilderArgs,
     builders::{BuilderConfig, FlashblocksServiceBuilder},
 };
+use reth::rpc::builder::config::RethRpcServerConfig;
 use reth::{
     builder::{EngineNodeLauncher, Node, NodeHandle, TreeConfig},
     providers::providers::BlockchainProvider,
 };
+use reth_node_api::FullNodeComponents;
 use reth_optimism_cli::Cli;
 use reth_optimism_node::OpNode;
-
-use reth_node_api::FullNodeComponents;
 use reth_rpc_eth_api::EthApiTypes;
-use reth_rpc_server_types::RethRpcModule;
 use xlayer_chainspec::XLayerChainSpecParser;
 use xlayer_flashblocks::handler::FlashblocksService;
 use xlayer_flashblocks::subscription::FlashblocksPubSub;
@@ -74,6 +73,17 @@ fn main() {
             let genesis_block = builder.config().chain.genesis().number.unwrap_or_default();
             info!("XLayer genesis block = {}", genesis_block);
 
+            // Check if debug module is enabled from builder's RPC config
+            use reth_rpc_server_types::RethRpcModule;
+            let rpc_module_config = builder.config().rpc.transport_rpc_module_config();
+            let debug_enabled = rpc_module_config.contains_any(&RethRpcModule::Debug);
+
+            if debug_enabled {
+                info!(target: "reth::cli", "Debug module is ENABLED on RPC");
+            } else {
+                info!(target: "reth::cli", "Debug module is NOT enabled on RPC");
+            }
+
             let legacy_config = LegacyRpcRouterConfig {
                 enabled: args.xlayer_args.legacy.legacy_rpc_url.is_some(),
                 legacy_endpoint: args.xlayer_args.legacy.legacy_rpc_url.unwrap_or_default(),
@@ -81,14 +91,10 @@ fn main() {
                 timeout: args.xlayer_args.legacy.legacy_rpc_timeout,
             };
 
-            // Build add-ons with RPC middleware
-            // Manually compose middleware layers using tower::layer::util::Stack
-            // IMPORTANT: Stack applies layers in reverse order!
-            // Stack::new(inner, outer).layer(service) does: outer.layer(inner.layer(service))
-            // So Stack(Legacy, InnerTx) creates: InnerTx -> Legacy -> base service
+            // Manually compose middleware layers as single layer
             let composed_middleware = Stack::new(
-                LegacyRpcRouterLayer::new(legacy_config),   // Gets applied first (inner)
-                InnerTxLayer::new()                          // Gets applied second (outer, runs first)
+                LegacyRpcRouterLayer::new(legacy_config),
+                InnerTxLayer::new(debug_enabled)
             );
 
             let add_ons = op_node.add_ons()

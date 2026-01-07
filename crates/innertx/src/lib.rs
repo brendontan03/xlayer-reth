@@ -15,7 +15,10 @@ use tracing::debug;
 
 #[derive(Clone)]
 pub struct InnerTxService<S> {
-    inner: S, // how we will forward to next layer
+    /// how we will forward to next layer
+    inner: S,
+    /// If disabled, will simply forward to legacy layer
+    enabled: bool,
 }
 
 impl<S> RpcServiceT for InnerTxService<S>
@@ -29,7 +32,7 @@ where
     fn call<'a>(&self, req: Request<'a>) -> impl Future<Output = Self::MethodResponse> + Send + 'a {
         let method = req.method_name();
 
-        debug!(target:"xlayer_innertx", "calling innertx middleware, method = {}", method);
+        debug!(target:"xlayer_innertx", "calling innertx middleware, method = {}, enabled = {}", method, self.enabled);
 
         self.inner.call(req)
     }
