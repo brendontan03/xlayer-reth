@@ -13983,6 +13983,16 @@ dependencies = [
 [[package]]
 name = "xlayer-innertx"
 version = "0.1.0"
+dependencies = [
+ "futures",
+ "jsonrpsee",
+ "jsonrpsee-types",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tracing",
+]
 
 [[package]]
 name = "xlayer-legacy-rpc"

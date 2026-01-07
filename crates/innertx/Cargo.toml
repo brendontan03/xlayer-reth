@@ -11,6 +11,14 @@ repository.workspace = true
 default = []
 
 [dependencies]
+reqwest.workspace = true
+tower.workspace = true
+tracing.workspace = true
+serde_json = { workspace = true, features = ["std"] }
+jsonrpsee-types.workspace = true
+jsonrpsee = { workspace = true, features = ["server", "client"] }
+tokio.workspace = true
+futures.workspace = true
 
 [lints]
 workspace = true

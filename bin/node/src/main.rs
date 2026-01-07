@@ -27,6 +27,7 @@ use xlayer_flashblocks::handler::FlashblocksService;
 use xlayer_flashblocks::subscription::FlashblocksPubSub;
 use xlayer_legacy_rpc::{layer::LegacyRpcRouterLayer, LegacyRpcRouterConfig};
 use xlayer_rpc::xlayer_ext::{XlayerRpcExt, XlayerRpcExtApiServer};
+use xlayer_innertx::layer::InnerTxLayer;
 
 #[global_allocator]
 static ALLOC: reth_cli_util::allocator::Allocator = reth_cli_util::allocator::new_allocator();
@@ -82,7 +83,8 @@ fn main() {
             // Build add-ons with RPC middleware
             // If not enabled, the layer will not do any re-routing.
             let add_ons = op_node.add_ons()
-                .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config));
+                .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config))
+                .with_rpc_middleware(InnerTxLayer::new());
 
             // Should run as sequencer if flashblocks.enabled = true. Doing so means you are
             // running a flashblocks producing sequencer.
