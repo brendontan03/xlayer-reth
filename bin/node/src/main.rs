@@ -84,7 +84,7 @@ fn main() {
             // If not enabled, the layer will not do any re-routing.
             let add_ons = op_node.add_ons()
                 .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config))
-                .with_rpc_middleware(InnerTxLayer::new());
+                .with_rpc_middleware(InnerTxLayer::new()); // This runs first
 
             // Should run as sequencer if flashblocks.enabled = true. Doing so means you are
             // running a flashblocks producing sequencer.
