@@ -11,7 +11,9 @@ use jsonrpsee::{
     proc_macros::rpc, server::SubscriptionMessage, types::ErrorObject, PendingSubscriptionSink,
     SubscriptionSink,
 };
-use moka::sync::Cache;
+use lru::LruCache;
+use std::cell::RefCell;
+use std::num::NonZeroUsize;
 use reth_optimism_flashblocks::{PendingBlockRx, PendingFlashBlock};
 use reth_primitives_traits::{
     NodePrimitives, Recovered, RecoveredBlock, SealedBlock, TransactionMeta,
@@ -26,7 +28,7 @@ use reth_tracing::tracing::warn;
 use std::{future::ready, sync::Arc};
 use tokio_stream::{wrappers::WatchStream, Stream};
 
-const MAX_TXHASH_CACHE_SIZE: u64 = 2_000;
+const MAX_TXHASH_CACHE_SIZE: usize = 2_000;
 
 type FlashblockItem<N, C> = FlashblockStreamEvent<
     <N as NodePrimitives>::BlockHeader,
@@ -187,7 +189,9 @@ where
         filter: FlashblocksFilter,
     ) -> impl Stream<Item = FlashblockItem<N, Eth::RpcConvert>> {
         let tx_converter = self.tx_converter.clone();
-        let txhash_cache = Cache::builder().max_capacity(MAX_TXHASH_CACHE_SIZE).build();
+        let txhash_cache = RefCell::new(
+            LruCache::new(NonZeroUsize::new(MAX_TXHASH_CACHE_SIZE).unwrap())
+        );
 
         WatchStream::new(self.pending_block_rx.clone())
             .filter_map(move |pending_block_opt| {
@@ -208,7 +212,7 @@ where
         pending_block: &PendingFlashBlock<N>,
         filter: &FlashblocksFilter,
         tx_converter: &Eth::RpcConvert,
-        txhash_cache: &Cache<TxHash, ()>,
+        txhash_cache: &RefCell<LruCache<TxHash, ()>>,
     ) -> Vec<FlashblockItem<N, Eth::RpcConvert>> {
         let block = pending_block.block();
         let receipts = pending_block.receipts.as_ref();
@@ -250,7 +254,7 @@ where
         receipts: &[N::Receipt],
         tx_converter: &Eth::RpcConvert,
         sealed_block: &SealedBlock<N::Block>,
-        txhash_cache: &Cache<TxHash, ()>,
+        txhash_cache: &RefCell<LruCache<TxHash, ()>>,
     ) -> Vec<EnrichedTxItem<Eth::RpcConvert>> {
         block
             .transactions_with_sender()
@@ -280,11 +284,11 @@ where
                     tx_converter,
                 };
 
-                if txhash_cache.get(&tx_hash).is_some() {
+                if txhash_cache.borrow().contains(&tx_hash) {
                     return None;
                 }
 
-                txhash_cache.insert(tx_hash, ());
+                txhash_cache.borrow_mut().put(tx_hash, ());
 
                 let tx_data = Self::enrich_transaction_data(filter, &ctx);
                 let tx_receipt = Self::enrich_receipt(filter, receipt, receipts, &ctx);
