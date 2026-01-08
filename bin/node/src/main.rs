@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use args_xlayer::XLayerArgs;
 use clap::Parser;
-use tracing::{error, info, trace};
+use tracing::{error, info};
 
 use op_rbuilder::{
     args::OpRbuilderArgs,
@@ -193,8 +193,6 @@ fn main() {
                             )?;
                             service.spawn();
                             info!(target: "reth::cli", "xlayer flashblocks service initialized");
-                        } else {
-                            trace!(target: "reth::cli", "unable to get flashblock receiver, xlayer flashblocks service not initialized");
                         }
 
                         if args.xlayer_args.enable_flashblocks_subscription && let Some(pending_blocks_rx) = new_op_eth_api.pending_block_rx() {
@@ -211,8 +209,6 @@ fn main() {
                                 flashblocks_pubsub.into_rpc(),
                             )?;
                             info!(target: "reth::cli", "xlayer eth pubsub initialized");
-                        } else {
-                            trace!(target: "reth::cli", "unable to get pending blocks receiver, flashblocks pubsub not initialized");
                         }
 
                         // Register XLayer RPC
