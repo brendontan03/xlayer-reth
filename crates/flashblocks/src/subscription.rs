@@ -24,10 +24,11 @@ use reth_rpc_server_types::result::{internal_rpc_err, invalid_params_rpc_err};
 use reth_storage_api::BlockNumReader;
 use reth_tasks::TaskSpawner;
 use reth_tracing::tracing::warn;
-use std::{future::ready, sync::Arc};
+use std::{future::ready, sync::Arc, time::Duration};
 use tokio_stream::{wrappers::WatchStream, Stream};
 
 const MAX_TXHASH_CACHE_SIZE: u64 = 2_000;
+const TXHASH_CACHE_TTL: Duration = Duration::from_secs(5);
 
 type FlashblockItem<N, C> = FlashblockStreamEvent<
     <N as NodePrimitives>::BlockHeader,
@@ -191,6 +192,7 @@ where
         let txhash_cache = Cache::builder()
             .max_capacity(MAX_TXHASH_CACHE_SIZE)
             .eviction_policy(EvictionPolicy::lru())
+            .time_to_live(TXHASH_CACHE_TTL)
             .build();
 
         WatchStream::new(self.pending_block_rx.clone())
