@@ -27,7 +27,7 @@ use reth_tracing::tracing::warn;
 use std::{future::ready, sync::Arc, time::Duration};
 use tokio_stream::{wrappers::WatchStream, Stream};
 
-const MAX_TXHASH_CACHE_SIZE: u64 = 2_000;
+const MAX_TXHASH_CACHE_SIZE: u64 = 10_000;
 const TXHASH_CACHE_TTL: Duration = Duration::from_secs(5);
 
 type FlashblockItem<N, C> = FlashblockStreamEvent<
