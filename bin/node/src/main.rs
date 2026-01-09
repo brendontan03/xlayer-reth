@@ -6,7 +6,6 @@ use std::sync::Arc;
 
 use args_xlayer::XLayerArgs;
 use clap::Parser;
-use tower::layer::util::Stack;
 use tracing::{info, warn};
 
 use op_rbuilder::{
@@ -91,14 +90,10 @@ fn main() {
                 timeout: args.xlayer_args.legacy.legacy_rpc_timeout,
             };
 
-            // Manually compose middleware layers as single layer
-            let composed_middleware = Stack::new(
-                LegacyRpcRouterLayer::new(legacy_config),
-                InnerTxLayer::new(debug_enabled)
-            );
-
             let add_ons = op_node.add_ons()
-                .with_rpc_middleware(composed_middleware);
+                .rpc_add_ons
+                .layer_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config))
+                .layer_rpc_middleware(InnerTxLayer::new(debug_enabled));
 
             // Should run as sequencer if flashblocks.enabled = true. Doing so means you are
             // running a flashblocks producing sequencer.
