@@ -24,7 +24,7 @@ use reth_rpc_server_types::result::{internal_rpc_err, invalid_params_rpc_err};
 use reth_storage_api::BlockNumReader;
 use reth_tasks::TaskSpawner;
 use reth_tracing::tracing::warn;
-use std::{future::ready, sync::Arc};
+use std::{collections::HashSet, future::ready, sync::Arc};
 use tokio_stream::{wrappers::WatchStream, Stream};
 
 const MAX_TXHASH_CACHE_SIZE: u64 = 10_000;
@@ -158,6 +158,13 @@ where
         kind: FlashblockSubscriptionKind,
         params: Option<FlashblockParams>,
     ) -> jsonrpsee::core::SubscriptionResult {
+        if let Some(params) = &params {
+            if let Err(err) = params.validate() {
+                pending.reject(err).await;
+                return Ok(());
+            }
+        }
+
         let sink = pending.accept().await?;
         let pubsub = self.clone();
         self.inner.subscription_task_spawner.spawn(Box::pin(async move {
@@ -370,7 +377,7 @@ where
         sender: Address,
         tx: &N::SignedTx,
         receipt: Option<&N::Receipt>,
-        addresses: &[Address],
+        addresses: &HashSet<Address>,
     ) -> bool {
         // Check sender
         if addresses.contains(&sender) {
