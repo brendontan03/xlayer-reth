@@ -11,7 +11,7 @@ use std::collections::HashSet;
 const FLASHBLOCKS: &str = "flashblocks";
 
 /// Maximum number of addresses that can be subscribed to.
-const MAX_SUBSCRIBED_ADDRESSES: usize = 10_000;
+const MAX_SUBSCRIBED_ADDRESSES: usize = 1_000;
 
 /// Subscription kind inclusive of flashblocks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
