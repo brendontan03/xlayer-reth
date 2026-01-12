@@ -89,9 +89,14 @@ where
         pending_block_rx: PendingBlockRx<N>,
         subscription_task_spawner: Box<dyn TaskSpawner>,
         tx_converter: Eth::RpcConvert,
+        max_subscribed_addresses: usize,
     ) -> Self {
-        let inner =
-            FlashblocksPubSubInner { pending_block_rx, subscription_task_spawner, tx_converter };
+        let inner = FlashblocksPubSubInner {
+            pending_block_rx,
+            subscription_task_spawner,
+            tx_converter,
+            max_subscribed_addresses,
+        };
         Self { eth_pubsub, inner: Arc::new(inner) }
     }
 
@@ -159,7 +164,7 @@ where
         params: Option<FlashblockParams>,
     ) -> jsonrpsee::core::SubscriptionResult {
         if let Some(params) = &params {
-            if let Err(err) = params.validate() {
+            if let Err(err) = params.validate(self.inner.max_subscribed_addresses) {
                 pending.reject(err).await;
                 return Ok(());
             }
@@ -183,6 +188,8 @@ pub struct FlashblocksPubSubInner<Eth: EthApiTypes, N: NodePrimitives> {
     pub(crate) subscription_task_spawner: Box<dyn TaskSpawner>,
     /// RPC transaction converter.
     pub(crate) tx_converter: Eth::RpcConvert,
+    /// Maximum number of subscribed addresses.
+    pub(crate) max_subscribed_addresses: usize,
 }
 
 impl<Eth: EthApiTypes, N: NodePrimitives> FlashblocksPubSubInner<Eth, N>

@@ -10,9 +10,6 @@ use std::collections::HashSet;
 
 const FLASHBLOCKS: &str = "flashblocks";
 
-/// Maximum number of addresses that can be subscribed to.
-const MAX_SUBSCRIBED_ADDRESSES: usize = 1_000;
-
 /// Subscription kind inclusive of flashblocks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -60,9 +57,9 @@ pub enum FlashblockParams {
 
 impl FlashblockParams {
     /// Validates the flashblock params.
-    pub fn validate(&self) -> Result<(), ErrorObject<'static>> {
+    pub fn validate(&self, max_subscribed_addresses: usize) -> Result<(), ErrorObject<'static>> {
         if let FlashblockParams::FlashblocksFilter(filter) = self {
-            if filter.sub_tx_filter.subscribe_addresses.len() > MAX_SUBSCRIBED_ADDRESSES {
+            if filter.sub_tx_filter.subscribe_addresses.len() > max_subscribed_addresses {
                 return Err(invalid_params_rpc_err("too many subscribe addresses"));
             }
         }
