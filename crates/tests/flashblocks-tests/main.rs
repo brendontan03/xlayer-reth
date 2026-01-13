@@ -1003,10 +1003,10 @@ fn process_flashblock_message(
     }
 }
 
-#[ignore = "Requires flashblocks WebSocket server to be running"]
+#[ignore = "Requires a second non-flashblock RPC node to be running"]
 #[tokio::test]
 async fn fb_subscription_test() -> Result<()> {
-    // Testing that the flashblocks WebSocket is working
+    // This tests that the flashblocks WebSocket is working by sending transactions to the WebSocket and checking if they appear in the flashblocks
     let ws_url = operations::manager::DEFAULT_FLASHBLOCKS_WS_URL;
     let test_address = operations::DEFAULT_L2_NEW_ACC1_ADDRESS;
     let non_fb_client = operations::create_test_client(operations::DEFAULT_L2_NETWORK_URL_NO_FB);
