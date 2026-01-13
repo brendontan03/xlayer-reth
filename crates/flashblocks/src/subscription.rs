@@ -20,6 +20,7 @@ use reth_primitives_traits::{
 use reth_rpc::eth::pubsub::EthPubSub;
 use reth_rpc_convert::{transaction::ConvertReceiptInput, RpcConvert};
 use reth_rpc_eth_api::{EthApiTypes, RpcNodeCore, RpcReceipt, RpcTransaction};
+use reth_rpc_eth_types::utils::calculate_gas_used_and_next_log_index;
 use reth_rpc_server_types::result::{internal_rpc_err, invalid_params_rpc_err};
 use reth_storage_api::BlockNumReader;
 use reth_tasks::TaskSpawner;
@@ -352,9 +353,8 @@ where
             return None;
         }
 
-        let gas_used = receipt.cumulative_gas_used();
-
-        let next_log_index = receipts.iter().take(ctx.idx).map(|r| r.logs().len()).sum::<usize>();
+        let (gas_used, next_log_index) =
+            calculate_gas_used_and_next_log_index(ctx.idx as u64, receipts);
 
         let receipt_input = ConvertReceiptInput {
             receipt: receipt.clone(),
