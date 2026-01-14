@@ -164,7 +164,12 @@ where
         kind: FlashblockSubscriptionKind,
         params: Option<FlashblockParams>,
     ) -> jsonrpsee::core::SubscriptionResult {
-        if let Some(params) = &params {
+        if kind == FlashblockSubscriptionKind::Flashblocks {
+            let Some(params) = &params else {
+                pending.reject(invalid_params_rpc_err("invalid params for flashblocks")).await;
+                return Ok(());
+            };
+
             if let Err(err) = params.validate(self.inner.max_subscribed_addresses) {
                 pending.reject(err).await;
                 return Ok(());
