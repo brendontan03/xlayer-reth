@@ -4,7 +4,7 @@ use crate::pubsub::{
 };
 use alloy_consensus::{transaction::TxHashRef, BlockHeader as _, Transaction as _, TxReceipt as _};
 use alloy_json_rpc::RpcObject;
-use alloy_primitives::{Address, TxHash};
+use alloy_primitives::{Address, TxHash, U256};
 use alloy_rpc_types_eth::{Header, TransactionInfo};
 use futures::StreamExt;
 use jsonrpsee::{
