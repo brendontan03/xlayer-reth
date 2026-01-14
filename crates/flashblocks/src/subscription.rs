@@ -4,7 +4,7 @@ use crate::pubsub::{
 };
 use alloy_consensus::{transaction::TxHashRef, BlockHeader as _, Transaction as _, TxReceipt as _};
 use alloy_json_rpc::RpcObject;
-use alloy_primitives::{Address, TxHash};
+use alloy_primitives::{Address, TxHash, U256};
 use alloy_rpc_types_eth::{Header, TransactionInfo};
 use futures::StreamExt;
 use jsonrpsee::{
@@ -366,7 +366,7 @@ where
         let receipt_input = ConvertReceiptInput {
             receipt: receipt.clone(),
             tx: Recovered::new_unchecked(ctx.tx, ctx.sender),
-            gas_used,
+            gas_used: receipt.cumulative_gas_used() - gas_used,
             next_log_index,
             meta: TransactionMeta {
                 tx_hash: ctx.tx_hash,
@@ -486,7 +486,9 @@ fn extract_header_from_pending_block<N: NodePrimitives>(
     pending_block: &PendingFlashBlock<N>,
 ) -> Result<Header<N::BlockHeader>, ErrorObject<'static>> {
     let block = pending_block.block();
-    let sealed_header = block.clone_sealed_header();
-
-    Ok(Header::from_consensus(sealed_header.into(), None, None))
+    Ok(Header::from_consensus(
+        block.clone_sealed_header().into(),
+        None,
+        Some(U256::from(block.rlp_length())),
+    ))
 }
