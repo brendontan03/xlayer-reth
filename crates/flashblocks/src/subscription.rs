@@ -377,7 +377,7 @@ where
             .convert_receipts_with_block(vec![receipt_input], ctx.sealed_block)
             .ok()?;
 
-        rpc_receipts.first().cloned()
+        rpc_receipts.into_iter().next()
     }
 
     fn is_address_in_transaction(
