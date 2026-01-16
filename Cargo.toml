@@ -125,7 +125,8 @@ revm-inspectors = { version = "0.32.0", default-features = false, features = [
 # ============================================================================== 
 # Flashblocks Dependencies
 # ============================================================================== 
-op-rbuilder = { git = "https://github.com/okx/op-rbuilder", tag = "v0.2.1" }
+# TODO: 开发阶段使用 leo/supporr-full-trace 分支，后续改为使用 tag
+op-rbuilder = { git = "https://github.com/okx/op-rbuilder", branch = "leo/supporr-full-trace" }
 
 # ==============================================================================
 # Alloy Dependencies
@@ -205,7 +206,7 @@ moka = { version = "0.12.11", features = ["sync"] }
 reth = { git = "https://github.com/okx/reth", rev = "3ba1e5d3820fff48ade7962769cb367ac183ba92" }
 
 # Patch reth-monitor for op-rbuilder to use the same instance
-# This ensures op-rbuilder uses the same reth-monitor crate as xlayer-reth
+# TODO (This ensures op-rbuilder uses the same reth-monitor crate as xlayer-reth)
 [patch."https://github.com/okx/reth"]
 reth-monitor = { git = "https://github.com/okx/reth", branch = "leo/support-full-trace" }
 reth-basic-payload-builder = { git = "https://github.com/okx/reth", rev = "3ba1e5d3820fff48ade7962769cb367ac183ba92" }
