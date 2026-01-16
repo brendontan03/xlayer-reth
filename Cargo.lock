@@ -8767,6 +8767,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-monitor"
+version = "1.9.3"
+source = "git+https://github.com/okx/reth?branch=leo%2Fsupport-full-trace#d89a2dab8aec367fc7318e6d56a5b763404e219f"
+dependencies = [
+ "alloy-primitives",
+ "tracing",
+]
+
+[[package]]
 name = "reth-net-banlist"
 version = "1.9.3"
 source = "git+https://github.com/okx/reth?rev=3ba1e5d3820fff48ade7962769cb367ac183ba92#3ba1e5d3820fff48ade7962769cb367ac183ba92"
@@ -13897,6 +13906,7 @@ dependencies = [
  "reth",
  "reth-cli-util",
  "reth-exex",
+ "reth-monitor",
  "reth-node-api",
  "reth-optimism-chainspec",
  "reth-optimism-cli",
