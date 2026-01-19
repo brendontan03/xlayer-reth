@@ -5,7 +5,7 @@ use reth::builder::components::PayloadServiceBuilder;
 use reth_node_api::NodeTypes;
 use reth_node_builder::{components::BasicPayloadServiceBuilder, BuilderContext};
 use reth_optimism_evm::OpEvmConfig;
-use reth_optimism_node::{args::RollupArgs, node::OpPayloadBuilder};
+use reth_optimism_node::node::OpPayloadBuilder;
 use reth_optimism_payload_builder::config::{OpDAConfig, OpGasLimitConfig};
 
 /// Payload builder strategy for X Layer.
