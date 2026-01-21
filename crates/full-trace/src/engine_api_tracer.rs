@@ -1,6 +1,6 @@
 //! Engine API tracer middleware implementation
 
-use crate::tracer::{BlockInfo, Tracer};
+use crate::tracer::{BlockInfo, TracerConfig};
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::{BlockHash, B256, U64};
 use alloy_rpc_types_engine::{
@@ -18,7 +18,7 @@ use reth_optimism_rpc::{OpEngineApi, OpEngineApiServer};
 use reth_rpc_api::IntoEngineApiRpcModule;
 use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
 use reth_transaction_pool::TransactionPool;
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 use tracing::trace;
 use xlayer_engine_api::XLayerEngineApiMiddleware;
 
@@ -27,6 +27,9 @@ type InnerOpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec> =
     Arc<OpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec>>;
 
 /// Engine API tracer middleware that wraps OpEngineApi and traces all Engine API calls.
+///
+/// This struct uses `TracerConfig<Args>` for shared configuration, keeping the type
+/// signature cleaner while still satisfying the necessary trait bounds through PhantomData.
 pub struct EngineApiTracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
 where
     EngineT: EngineTypes<ExecutionData = OpExecutionData>,
@@ -34,8 +37,10 @@ where
 {
     /// The inner OpEngineApi (set during build)
     inner: Option<InnerOpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec>>,
-    /// The tracer instance that handles events
-    tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>,
+    /// The tracer configuration that handles events
+    config: Arc<TracerConfig<Args>>,
+    /// Phantom data for unused type parameters
+    _phantom: PhantomData<(Provider, EngineT, Pool, Validator, ChainSpec)>,
 }
 
 impl<Provider, EngineT, Pool, Validator, ChainSpec, Args>
@@ -44,11 +49,9 @@ where
     EngineT: EngineTypes<ExecutionData = OpExecutionData>,
     Args: Clone + Send + Sync + 'static,
 {
-    /// Create a new Engine API tracer with a tracer instance.
-    pub(crate) fn new(
-        tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>,
-    ) -> Self {
-        Self { inner: None, tracer }
+    /// Create a new Engine API tracer with a tracer configuration.
+    pub fn new(config: Arc<TracerConfig<Args>>) -> Self {
+        Self { inner: None, config, _phantom: PhantomData }
     }
 
     /// Set the inner OpEngineApi.
@@ -69,7 +72,7 @@ where
     Args: Clone + Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone(), tracer: self.tracer.clone() }
+        Self { inner: self.inner.clone(), config: self.config.clone(), _phantom: PhantomData }
     }
 }
 
@@ -95,7 +98,7 @@ where
             block_number: payload.execution_payload.block_number,
             block_hash: payload.execution_payload.block_hash,
         };
-        self.tracer.on_new_payload("v2", &block_info);
+        self.config.on_new_payload("v2", &block_info);
 
         match self.inner() {
             Some(inner) => inner.new_payload_v2(payload).await,
@@ -123,7 +126,7 @@ where
             block_number: payload.payload_inner.payload_inner.block_number,
             block_hash: payload.payload_inner.payload_inner.block_hash,
         };
-        self.tracer.on_new_payload("v3", &block_info);
+        self.config.on_new_payload("v3", &block_info);
 
         match self.inner() {
             Some(inner) => {
@@ -154,7 +157,7 @@ where
             block_number: payload.payload_inner.payload_inner.payload_inner.block_number,
             block_hash: payload.payload_inner.payload_inner.payload_inner.block_hash,
         };
-        self.tracer.on_new_payload("v4", &block_info);
+        self.config.on_new_payload("v4", &block_info);
 
         match self.inner() {
             Some(inner) => {
@@ -190,7 +193,11 @@ where
         );
 
         // Call the tracer before execution
-        self.tracer.on_fork_choice_updated("v1", &fork_choice_state, &payload_attributes);
+        self.config.on_fork_choice_updated::<EngineT>(
+            "v1",
+            &fork_choice_state,
+            &payload_attributes,
+        );
 
         match self.inner() {
             Some(inner) => {
@@ -219,7 +226,11 @@ where
         );
 
         // Call the tracer before execution
-        self.tracer.on_fork_choice_updated("v2", &fork_choice_state, &payload_attributes);
+        self.config.on_fork_choice_updated::<EngineT>(
+            "v2",
+            &fork_choice_state,
+            &payload_attributes,
+        );
 
         match self.inner() {
             Some(inner) => {
@@ -248,7 +259,11 @@ where
         );
 
         // Call the tracer before execution
-        self.tracer.on_fork_choice_updated("v3", &fork_choice_state, &payload_attributes);
+        self.config.on_fork_choice_updated::<EngineT>(
+            "v3",
+            &fork_choice_state,
+            &payload_attributes,
+        );
 
         match self.inner() {
             Some(inner) => {

@@ -1,6 +1,6 @@
 //! RPC tracer middleware for tracing transaction submissions
 
-use crate::Tracer;
+use crate::TracerConfig;
 use alloy_primitives::B256;
 use futures::future::Either;
 use jsonrpsee::{
@@ -9,74 +9,59 @@ use jsonrpsee::{
     types::Request,
     MethodResponse,
 };
-use op_alloy_rpc_types_engine::OpExecutionData;
-use reth_chainspec::EthereumHardforks;
-use reth_node_api::{EngineApiValidator, EngineTypes};
-use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
-use reth_transaction_pool::TransactionPool;
 use std::{future::Future, sync::Arc};
 use tower::Layer;
 use tracing::trace;
 
-/// Layer that creates the RPC tracing middleware
+/// Layer that creates the RPC tracing middleware.
+///
+/// This layer is generic only over `Args`, making it simple to use
+/// while still providing access to the shared `TracerConfig`.
 #[derive(Clone)]
-pub struct RpcTracerLayer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+pub struct RpcTracerLayer<Args>
 where
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
     Args: Clone + Send + Sync + 'static,
 {
-    tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>,
+    config: Arc<TracerConfig<Args>>,
 }
 
-impl<Provider, EngineT, Pool, Validator, ChainSpec, Args>
-    RpcTracerLayer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+impl<Args> RpcTracerLayer<Args>
 where
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
     Args: Clone + Send + Sync + 'static,
 {
-    /// Create a new RPC tracer layer
-    pub fn new(tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>) -> Self {
-        Self { tracer }
+    /// Create a new RPC tracer layer with a shared tracer configuration.
+    pub fn new(config: Arc<TracerConfig<Args>>) -> Self {
+        Self { config }
     }
 }
 
-impl<S, Provider, EngineT, Pool, Validator, ChainSpec, Args> Layer<S>
-    for RpcTracerLayer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+impl<S, Args> Layer<S> for RpcTracerLayer<Args>
 where
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
     Args: Clone + Send + Sync + 'static,
 {
-    type Service = RpcTracerService<S, Provider, EngineT, Pool, Validator, ChainSpec, Args>;
+    type Service = RpcTracerService<S, Args>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        RpcTracerService { inner, tracer: self.tracer.clone() }
+        RpcTracerService { inner, config: self.config.clone() }
     }
 }
 
-/// RPC tracer service that intercepts RPC calls
+/// RPC tracer service that intercepts RPC calls.
+///
+/// This service is generic only over the inner service `S` and `Args`,
+/// making it simple to use while still providing access to the shared `TracerConfig`.
 #[derive(Clone)]
-pub struct RpcTracerService<S, Provider, EngineT, Pool, Validator, ChainSpec, Args>
+pub struct RpcTracerService<S, Args>
 where
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
     Args: Clone + Send + Sync + 'static,
 {
     inner: S,
-    tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>,
+    config: Arc<TracerConfig<Args>>,
 }
 
-impl<S, Provider, EngineT, Pool, Validator, ChainSpec, Args> RpcServiceT
-    for RpcTracerService<S, Provider, EngineT, Pool, Validator, ChainSpec, Args>
+impl<S, Args> RpcServiceT for RpcTracerService<S, Args>
 where
     S: RpcServiceT<MethodResponse = MethodResponse> + Send + Sync + Clone + 'static,
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
     Args: Clone + Send + Sync + 'static,
 {
     type MethodResponse = MethodResponse;
@@ -100,7 +85,7 @@ where
             method
         );
 
-        let tracer = self.tracer.clone();
+        let config = self.config.clone();
         let inner = self.inner.clone();
         let method_owned = method.to_string();
 
@@ -114,7 +99,7 @@ where
                 && let Some(tx_hash_str) = result.as_str()
                 && let Ok(tx_hash) = tx_hash_str.parse::<B256>()
             {
-                tracer.on_recv_transaction(&method_owned, tx_hash);
+                config.on_recv_transaction(&method_owned, tx_hash);
             }
 
             response

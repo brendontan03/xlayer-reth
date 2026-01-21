@@ -9,7 +9,7 @@ use payload::XLayerPayloadServiceBuilder;
 use std::sync::Arc;
 use tracing::info;
 use xlayer_engine_api::XLayerEngineApiBuilder;
-use xlayer_full_trace::Tracer;
+use xlayer_full_trace::{EngineApiTracer, RpcTracerLayer, TracerConfig};
 
 use op_rbuilder::args::OpRbuilderArgs;
 use reth::{
@@ -84,20 +84,23 @@ fn main() {
 
             // Build add-ons with RPC middleware and custom Engine API
             // XLayerEngineApiBuilder wraps OpEngineApiBuilder with middleware
-            let tracer = Arc::new(Tracer::new(xlayer_args.full_trace.clone()));
-            let engine_api_tracer = tracer.clone();
-            let rpc_tracer = tracer.clone();
-            let blockchain_tracer = tracer.clone();
+            //
+            // TracerConfig is a simple struct with only Args generic, making it easy to share.
+            // It returns Arc<TracerConfig<Args>> directly from new().
+            let tracer_config = TracerConfig::new(xlayer_args.full_trace);
             let op_engine_builder = OpEngineApiBuilder::<OpEngineValidatorBuilder>::default();
 
             // Use EngineApiTracer as the middleware with built-in event handlers
             let xlayer_engine_builder = XLayerEngineApiBuilder::new(op_engine_builder)
-                .with_middleware(move || engine_api_tracer.build_engine_api_tracer());
+                .with_middleware({
+                    let config = tracer_config.clone();
+                    move || EngineApiTracer::new(config)
+                });
 
             let add_ons = op_node
                 .add_ons()
                 .with_rpc_middleware(LegacyRpcRouterLayer::new(legacy_config))
-                .with_rpc_middleware(rpc_tracer.build_rpc_tracer()) // Add RPC tracer middleware
+                .with_rpc_middleware(RpcTracerLayer::new(tracer_config.clone()))
                 .with_engine_api(xlayer_engine_builder);
 
             // Create the XLayer payload service builder
@@ -116,7 +119,7 @@ fn main() {
                     let new_op_eth_api = Arc::new(ctx.registry.eth_api().clone());
 
                     // Initialize blockchain tracer to monitor canonical state changes
-                    blockchain_tracer.clone().initialize_blockchain_tracer(ctx.node());
+                    tracer_config.initialize_blockchain_tracer(ctx.node());
 
                     // Initialize flashblocks RPC service if not in flashblocks sequencer mode
                     if !args.node_args.flashblocks.enabled {

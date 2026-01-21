@@ -1,15 +1,10 @@
 //! Blockchain tracer for monitoring canonical state changes
 
-use crate::tracer::{BlockInfo, Tracer};
+use crate::tracer::{BlockInfo, TracerConfig};
 use alloy_consensus::{transaction::TxHashRef, BlockHeader as _};
 use futures::StreamExt;
-use op_alloy_rpc_types_engine::OpExecutionData;
-use reth_chainspec::EthereumHardforks;
-use reth_node_api::{EngineApiValidator, EngineTypes};
 use reth_primitives_traits::BlockBody as _;
 use reth_provider::CanonStateNotification;
-use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
-use reth_transaction_pool::TransactionPool;
 use std::sync::Arc;
 use tracing::{debug, info};
 
@@ -20,20 +15,15 @@ use tracing::{debug, info};
 ///
 /// # Parameters
 /// - `stream`: The canonical state notification stream from the blockchain provider
-/// - `tracer`: The tracer instance that handles events
+/// - `config`: The tracer configuration that handles events
 ///
 /// # Note
-/// This function is called internally by `Tracer::initialize_blockchain_tracer()`.
+/// This function is called internally by `TracerConfig::initialize_blockchain_tracer()`.
 /// You typically don't need to call this directly.
-pub async fn handle_canonical_state_stream<Provider, EngineT, Pool, Validator, ChainSpec, Args, N>(
+pub async fn handle_canonical_state_stream<Args, N>(
     mut stream: impl StreamExt<Item = CanonStateNotification<N>> + Unpin,
-    tracer: Arc<Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>>,
+    config: Arc<TracerConfig<Args>>,
 ) where
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
     Args: Clone + Send + Sync + 'static,
     N: reth_primitives_traits::NodePrimitives + 'static,
     N::SignedTx: alloy_consensus::transaction::TxHashRef,
@@ -56,12 +46,12 @@ pub async fn handle_canonical_state_stream<Provider, EngineT, Pool, Validator, C
                     let block_info = BlockInfo { block_number, block_hash };
 
                     // Notify block commit
-                    tracer.on_block_commit(&block_info);
+                    config.on_block_commit(&block_info);
 
                     // Notify each transaction commit
                     for tx in sealed_block.body().transactions() {
                         let tx_hash = *tx.tx_hash();
-                        tracer.on_tx_commit(&block_info, tx_hash);
+                        config.on_tx_commit(&block_info, tx_hash);
                     }
                 }
             }
@@ -91,12 +81,12 @@ pub async fn handle_canonical_state_stream<Provider, EngineT, Pool, Validator, C
                     let block_info = BlockInfo { block_number, block_hash };
 
                     // Notify block commit
-                    tracer.on_block_commit(&block_info);
+                    config.on_block_commit(&block_info);
 
                     // Notify each transaction commit
                     for tx in sealed_block.body().transactions() {
                         let tx_hash = *tx.tx_hash();
-                        tracer.on_tx_commit(&block_info, tx_hash);
+                        config.on_tx_commit(&block_info, tx_hash);
                     }
                 }
             }

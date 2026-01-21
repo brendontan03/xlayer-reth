@@ -6,53 +6,51 @@
 //!
 //! - **Engine API Tracing**: Trace Engine API calls like `fork_choice_updated` and `new_payload`
 //! - **RPC Transaction Tracing**: Trace transaction submissions via `eth_sendRawTransaction` and `eth_sendTransaction`
+//! - **Blockchain Tracing**: Monitor canonical state changes (block commits, transaction commits)
+//!
+//! # Architecture
+//!
+//! The tracer system is designed around a shared `TracerConfig<Args>` that holds configuration
+//! and event handlers. This config is shared across multiple tracer components:
+//!
+//! - `EngineApiTracer`: Middleware for Engine API calls
+//! - `RpcTracerLayer`: Tower layer for RPC middleware
+//! - `initialize_blockchain_tracer`: Background task for canonical state monitoring
 //!
 //! # Example Usage
 //!
-//! ## Engine API Tracing
-//!
 //! ```rust,ignore
-//! use xlayer_full_trace::Tracer;
+//! use xlayer_full_trace::{TracerConfig, EngineApiTracer, RpcTracerLayer};
 //! use xlayer_engine_api::XLayerEngineApiBuilder;
-//! use std::sync::Arc;
 //!
-//! // Create a tracer instance
-//! let tracer = Arc::new(Tracer::new(xlayer_args));
+//! // Create a shared tracer configuration (returns Arc<TracerConfig<Args>>)
+//! let tracer_config = TracerConfig::new(xlayer_args.full_trace);
 //!
-//! // Clone for Engine API middleware
-//! let tracer_for_engine = tracer.clone();
-//!
-//! // Build the Engine API with the tracer middleware
-//! // The tracer's event handlers (on_fork_choice_updated and on_new_payload)
-//! // will be automatically called BEFORE Engine API methods are executed
+//! // Build the Engine API with tracer middleware
 //! let xlayer_engine_builder = XLayerEngineApiBuilder::new(op_engine_builder)
-//!     .with_middleware(move || tracer_for_engine.clone().build_engine_api_tracer());
-//! ```
+//!     .with_middleware({
+//!         let config = tracer_config.clone();
+//!         move || EngineApiTracer::new(config)
+//!     });
 //!
-//! ## RPC Transaction Tracing
-//!
-//! ```rust,ignore
-//! use xlayer_full_trace::RpcTracerLayer;
-//!
-//! // Create RPC tracer layer for tracing transaction submissions
-//! let rpc_tracer_layer = RpcTracerLayer::new(tracer);
-//!
-//! // Register as RPC middleware
+//! // Add RPC tracing middleware
 //! let add_ons = op_node
 //!     .add_ons()
-//!     .with_rpc_middleware(rpc_tracer_layer)
+//!     .with_rpc_middleware(RpcTracerLayer::new(tracer_config.clone()))
 //!     .with_engine_api(xlayer_engine_builder);
+//!
+//! // Later, in extend_rpc_modules, initialize blockchain tracer
+//! tracer_config.initialize_blockchain_tracer(ctx.node());
 //! ```
 //!
 //! # Implementing Custom Event Handlers
 //!
-//! To add custom tracing logic, modify the event handler methods in the `Tracer` implementation:
+//! To add custom tracing logic, modify the event handler methods in `TracerConfig`:
 //! - `on_fork_choice_updated`: Called before fork choice updates
 //! - `on_new_payload`: Called before new payload execution
 //! - `on_recv_transaction`: Called when a transaction is received via RPC
-//!
-//! Note: Event handlers are called BEFORE the actual execution, so they
-//! do not have access to the result of the call.
+//! - `on_block_commit`: Called when a block is committed to canonical chain
+//! - `on_tx_commit`: Called when a transaction is committed to canonical chain
 
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
@@ -64,4 +62,4 @@ mod tracer;
 pub use blockchain_tracer::handle_canonical_state_stream;
 pub use engine_api_tracer::EngineApiTracer;
 pub use rpc_tracer::{RpcTracerLayer, RpcTracerService};
-pub use tracer::{BlockInfo, Tracer};
+pub use tracer::{BlockInfo, TracerConfig};

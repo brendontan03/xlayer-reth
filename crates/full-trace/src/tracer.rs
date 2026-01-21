@@ -1,13 +1,9 @@
-//! Tracer implementation for full trace support
+//! Tracer configuration for full trace support
 
-use crate::EngineApiTracer;
 use alloy_primitives::B256;
 use alloy_rpc_types_engine::ForkchoiceState;
 use op_alloy_rpc_types_engine::OpExecutionData;
-use reth_chainspec::EthereumHardforks;
-use reth_node_api::{EngineApiValidator, EngineTypes};
-use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
-use reth_transaction_pool::TransactionPool;
+use reth_node_api::EngineTypes;
 use std::sync::Arc;
 
 /// Block information for tracing.
@@ -19,85 +15,30 @@ pub struct BlockInfo {
     pub block_hash: B256,
 }
 
-/// Tracer struct that holds tracing state and configuration.
+/// Tracer configuration that holds tracing state and configuration.
 ///
 /// This is the main entry point for the full trace functionality.
 /// It manages the tracing configuration and implements event handlers.
-pub struct Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+///
+/// This struct is intentionally simple with only the `Args` generic parameter,
+/// making it easy to share across different tracer components without
+/// carrying unnecessary type complexity.
+pub struct TracerConfig<Args>
 where
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
     Args: Clone + Send + Sync + 'static,
 {
     /// XLayer arguments (reserved for future use)
     #[allow(dead_code)]
     xlayer_args: Args,
-    _phantom: std::marker::PhantomData<(Provider, EngineT, Pool, Validator, ChainSpec)>,
 }
 
-impl<Provider, EngineT, Pool, Validator, ChainSpec, Args>
-    Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+impl<Args> TracerConfig<Args>
 where
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
     Args: Clone + Send + Sync + 'static,
 {
-    /// Create a new Tracer instance.
-    pub fn new(xlayer_args: Args) -> Self {
-        Self { xlayer_args, _phantom: std::marker::PhantomData }
-    }
-
-    /// Build an EngineApiTracer with this tracer instance.
-    ///
-    /// This creates a new EngineApiTracer instance that holds a reference to this tracer.
-    pub fn build_engine_api_tracer(
-        self: Arc<Self>,
-    ) -> EngineApiTracer<Provider, EngineT, Pool, Validator, ChainSpec, Args> {
-        EngineApiTracer::new(self)
-    }
-
-    /// Build an RpcTracerLayer with this tracer instance.
-    ///
-    /// This creates a new RpcTracerLayer instance that holds a reference to this tracer.
-    pub fn build_rpc_tracer(
-        self: Arc<Self>,
-    ) -> crate::RpcTracerLayer<Provider, EngineT, Pool, Validator, ChainSpec, Args> {
-        crate::RpcTracerLayer::new(self)
-    }
-
-    /// Initialize blockchain tracer to monitor canonical state changes.
-    ///
-    /// This spawns a background task that subscribes to canonical state notifications
-    /// and calls the tracer's event handlers for each block and transaction.
-    ///
-    /// # Example
-    /// ```rust,ignore
-    /// let tracer = Arc::new(Tracer::new(xlayer_args));
-    /// tracer.initialize_blockchain_tracer(ctx.node());
-    /// ```
-    pub fn initialize_blockchain_tracer<Node>(self: Arc<Self>, node: &Node)
-    where
-        Node: reth_node_api::FullNodeComponents + Clone + 'static,
-        <Node as reth_node_api::FullNodeTypes>::Provider: reth_chain_state::CanonStateSubscriptions,
-    {
-        use reth_chain_state::CanonStateSubscriptions as _;
-
-        let provider = node.provider().clone();
-        let task_executor = node.task_executor().clone();
-
-        // Subscribe to canonical state updates
-        let canonical_stream = provider.canonical_state_stream();
-
-        tracing::info!(target: "xlayer::full_trace::blockchain", "Initializing blockchain tracer for canonical state stream");
-
-        task_executor.spawn_critical(
-            "xlayer-blockchain-tracer",
-            Box::pin(async move {
-                crate::handle_canonical_state_stream(canonical_stream, self).await;
-            }),
-        );
+    /// Create a new TracerConfig instance wrapped in Arc for sharing.
+    pub fn new(xlayer_args: Args) -> Arc<Self> {
+        Arc::new(Self { xlayer_args })
     }
 
     /// Handle fork choice updated events.
@@ -109,7 +50,7 @@ where
     /// - `version`: The fork choice updated version (e.g., "v1", "v2", "v3")
     /// - `state`: The fork choice state containing head, safe, and finalized block hashes
     /// - `attrs`: Optional payload attributes for block building
-    pub(crate) fn on_fork_choice_updated(
+    pub fn on_fork_choice_updated<EngineT: EngineTypes<ExecutionData = OpExecutionData>>(
         &self,
         version: &str,
         state: &ForkchoiceState,
@@ -136,7 +77,7 @@ where
     /// # Parameters
     /// - `version`: The payload version (e.g., "v2", "v3", "v4")
     /// - `block_info`: Block information containing block number and hash
-    pub(crate) fn on_new_payload(&self, version: &str, block_info: &BlockInfo) {
+    pub fn on_new_payload(&self, version: &str, block_info: &BlockInfo) {
         tracing::info!(
             target: "xlayer::full_trace::new_payload",
             "New payload {} called: block_number={}, block_hash={:?}",
@@ -174,7 +115,7 @@ where
     ///
     /// # Parameters
     /// - `block_info`: Block information containing block number and hash
-    pub(crate) fn on_block_commit(&self, block_info: &BlockInfo) {
+    pub fn on_block_commit(&self, block_info: &BlockInfo) {
         tracing::info!(
             target: "xlayer::full_trace::block_commit",
             "Block committed: block_number={}, block_hash={:?}",
@@ -193,7 +134,7 @@ where
     /// # Parameters
     /// - `block_info`: Block information containing block number and hash
     /// - `tx_hash`: The transaction hash
-    pub(crate) fn on_tx_commit(&self, block_info: &BlockInfo, tx_hash: B256) {
+    pub fn on_tx_commit(&self, block_info: &BlockInfo, tx_hash: B256) {
         tracing::info!(
             target: "xlayer::full_trace::tx_commit",
             "Transaction committed: block_number={}, block_hash={:?}, tx_hash={:?}",
@@ -204,19 +145,47 @@ where
 
         // TODO: add SeqTxExecutionEnd here if flashblocks is disabled, you can use xlayer_args if you want
     }
+
+    /// Initialize blockchain tracer to monitor canonical state changes.
+    ///
+    /// This spawns a background task that subscribes to canonical state notifications
+    /// and calls the tracer's event handlers for each block and transaction.
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let config = TracerConfig::new(xlayer_args);
+    /// config.initialize_blockchain_tracer(ctx.node());
+    /// ```
+    pub fn initialize_blockchain_tracer<Node>(self: &Arc<Self>, node: &Node)
+    where
+        Node: reth_node_api::FullNodeComponents + Clone + 'static,
+        <Node as reth_node_api::FullNodeTypes>::Provider: reth_chain_state::CanonStateSubscriptions,
+    {
+        use reth_chain_state::CanonStateSubscriptions as _;
+
+        let provider = node.provider().clone();
+        let task_executor = node.task_executor().clone();
+
+        // Subscribe to canonical state updates
+        let canonical_stream = provider.canonical_state_stream();
+
+        tracing::info!(target: "xlayer::full_trace::blockchain", "Initializing blockchain tracer for canonical state stream");
+
+        let config = self.clone();
+        task_executor.spawn_critical(
+            "xlayer-blockchain-tracer",
+            Box::pin(async move {
+                crate::handle_canonical_state_stream(canonical_stream, config).await;
+            }),
+        );
+    }
 }
 
-impl<Provider, EngineT, Pool, Validator, ChainSpec, Args> Default
-    for Tracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+impl<Args> Default for TracerConfig<Args>
 where
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
     Args: Clone + Send + Sync + Default + 'static,
 {
     fn default() -> Self {
-        Self::new(Args::default())
+        Self { xlayer_args: Args::default() }
     }
 }
