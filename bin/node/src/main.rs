@@ -77,7 +77,7 @@ fn main() {
 
             let legacy_config = LegacyRpcRouterConfig {
                 enabled: xlayer_args.legacy.legacy_rpc_url.is_some(),
-                legacy_endpoint: xlayer_args.legacy.legacy_rpc_url.clone().unwrap_or_default(),
+                legacy_endpoint: xlayer_args.legacy.legacy_rpc_url.unwrap_or_default(),
                 cutoff_block: genesis_block,
                 timeout: xlayer_args.legacy.legacy_rpc_timeout,
             };
