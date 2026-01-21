@@ -15,7 +15,7 @@ pub struct BlockInfo {
     pub block_hash: B256,
 }
 
-/// Tracer configuration that holds tracing state and configuration.
+/// Tracer that holds tracing state and configuration.
 ///
 /// This is the main entry point for the full trace functionality.
 /// It manages the tracing configuration and implements event handlers.
@@ -23,7 +23,7 @@ pub struct BlockInfo {
 /// This struct is intentionally simple with only the `Args` generic parameter,
 /// making it easy to share across different tracer components without
 /// carrying unnecessary type complexity.
-pub struct TracerConfig<Args>
+pub struct Tracer<Args>
 where
     Args: Clone + Send + Sync + 'static,
 {
@@ -32,11 +32,11 @@ where
     xlayer_args: Args,
 }
 
-impl<Args> TracerConfig<Args>
+impl<Args> Tracer<Args>
 where
     Args: Clone + Send + Sync + 'static,
 {
-    /// Create a new TracerConfig instance wrapped in Arc for sharing.
+    /// Create a new Tracer instance wrapped in Arc for sharing.
     pub fn new(xlayer_args: Args) -> Arc<Self> {
         Arc::new(Self { xlayer_args })
     }
@@ -153,7 +153,7 @@ where
     ///
     /// # Example
     /// ```rust,ignore
-    /// let config = TracerConfig::new(xlayer_args);
+    /// let config = Tracer::new(xlayer_args);
     /// config.initialize_blockchain_tracer(ctx.node());
     /// ```
     pub fn initialize_blockchain_tracer<Node>(self: &Arc<Self>, node: &Node)
@@ -181,7 +181,7 @@ where
     }
 }
 
-impl<Args> Default for TracerConfig<Args>
+impl<Args> Default for Tracer<Args>
 where
     Args: Clone + Send + Sync + Default + 'static,
 {

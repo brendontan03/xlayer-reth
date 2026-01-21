@@ -1,6 +1,6 @@
 //! Engine API tracer middleware implementation
 
-use crate::tracer::{BlockInfo, TracerConfig};
+use crate::tracer::{BlockInfo, Tracer};
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::{BlockHash, B256, U64};
 use alloy_rpc_types_engine::{
@@ -28,7 +28,7 @@ type InnerOpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec> =
 
 /// Engine API tracer middleware that wraps OpEngineApi and traces all Engine API calls.
 ///
-/// This struct uses `TracerConfig<Args>` for shared configuration, keeping the type
+/// This struct uses `Tracer<Args>` for shared configuration, keeping the type
 /// signature cleaner while still satisfying the necessary trait bounds through PhantomData.
 pub struct EngineApiTracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
 where
@@ -38,7 +38,7 @@ where
     /// The inner OpEngineApi (set during build)
     inner: Option<InnerOpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec>>,
     /// The tracer configuration that handles events
-    config: Arc<TracerConfig<Args>>,
+    config: Arc<Tracer<Args>>,
     /// Phantom data for unused type parameters
     _phantom: PhantomData<(Provider, EngineT, Pool, Validator, ChainSpec)>,
 }
@@ -50,7 +50,7 @@ where
     Args: Clone + Send + Sync + 'static,
 {
     /// Create a new Engine API tracer with a tracer configuration.
-    pub fn new(config: Arc<TracerConfig<Args>>) -> Self {
+    pub fn new(config: Arc<Tracer<Args>>) -> Self {
         Self { inner: None, config, _phantom: PhantomData }
     }
 

@@ -1,6 +1,6 @@
 //! Blockchain tracer for monitoring canonical state changes
 
-use crate::tracer::{BlockInfo, TracerConfig};
+use crate::tracer::{BlockInfo, Tracer};
 use alloy_consensus::{transaction::TxHashRef, BlockHeader as _};
 use futures::StreamExt;
 use reth_primitives_traits::BlockBody as _;
@@ -18,11 +18,11 @@ use tracing::{debug, info};
 /// - `config`: The tracer configuration that handles events
 ///
 /// # Note
-/// This function is called internally by `TracerConfig::initialize_blockchain_tracer()`.
+/// This function is called internally by `Tracer::initialize_blockchain_tracer()`.
 /// You typically don't need to call this directly.
 pub async fn handle_canonical_state_stream<Args, N>(
     mut stream: impl StreamExt<Item = CanonStateNotification<N>> + Unpin,
-    config: Arc<TracerConfig<Args>>,
+    config: Arc<Tracer<Args>>,
 ) where
     Args: Clone + Send + Sync + 'static,
     N: reth_primitives_traits::NodePrimitives + 'static,

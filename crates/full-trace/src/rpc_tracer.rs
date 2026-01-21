@@ -1,6 +1,6 @@
 //! RPC tracer middleware for tracing transaction submissions
 
-use crate::TracerConfig;
+use crate::Tracer;
 use alloy_primitives::B256;
 use futures::future::Either;
 use jsonrpsee::{
@@ -16,13 +16,13 @@ use tracing::trace;
 /// Layer that creates the RPC tracing middleware.
 ///
 /// This layer is generic only over `Args`, making it simple to use
-/// while still providing access to the shared `TracerConfig`.
+/// while still providing access to the shared `Tracer`.
 #[derive(Clone)]
 pub struct RpcTracerLayer<Args>
 where
     Args: Clone + Send + Sync + 'static,
 {
-    config: Arc<TracerConfig<Args>>,
+    config: Arc<Tracer<Args>>,
 }
 
 impl<Args> RpcTracerLayer<Args>
@@ -30,7 +30,7 @@ where
     Args: Clone + Send + Sync + 'static,
 {
     /// Create a new RPC tracer layer with a shared tracer configuration.
-    pub fn new(config: Arc<TracerConfig<Args>>) -> Self {
+    pub fn new(config: Arc<Tracer<Args>>) -> Self {
         Self { config }
     }
 }
@@ -49,14 +49,14 @@ where
 /// RPC tracer service that intercepts RPC calls.
 ///
 /// This service is generic only over the inner service `S` and `Args`,
-/// making it simple to use while still providing access to the shared `TracerConfig`.
+/// making it simple to use while still providing access to the shared `Tracer`.
 #[derive(Clone)]
 pub struct RpcTracerService<S, Args>
 where
     Args: Clone + Send + Sync + 'static,
 {
     inner: S,
-    config: Arc<TracerConfig<Args>>,
+    config: Arc<Tracer<Args>>,
 }
 
 impl<S, Args> RpcServiceT for RpcTracerService<S, Args>

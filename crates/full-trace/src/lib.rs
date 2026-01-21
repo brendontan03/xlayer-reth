@@ -10,7 +10,7 @@
 //!
 //! # Architecture
 //!
-//! The tracer system is designed around a shared `TracerConfig<Args>` that holds configuration
+//! The tracer system is designed around a shared `Tracer<Args>` that holds configuration
 //! and event handlers. This config is shared across multiple tracer components:
 //!
 //! - `EngineApiTracer`: Middleware for Engine API calls
@@ -20,11 +20,11 @@
 //! # Example Usage
 //!
 //! ```rust,ignore
-//! use xlayer_full_trace::{TracerConfig, EngineApiTracer, RpcTracerLayer};
+//! use xlayer_full_trace::{Tracer, EngineApiTracer, RpcTracerLayer};
 //! use xlayer_engine_api::XLayerEngineApiBuilder;
 //!
-//! // Create a shared tracer configuration (returns Arc<TracerConfig<Args>>)
-//! let tracer_config = TracerConfig::new(xlayer_args.full_trace);
+//! // Create a shared tracer configuration (returns Arc<Tracer<Args>>)
+//! let tracer_config = Tracer::new(xlayer_args.full_trace);
 //!
 //! // Build the Engine API with tracer middleware
 //! let xlayer_engine_builder = XLayerEngineApiBuilder::new(op_engine_builder)
@@ -45,7 +45,7 @@
 //!
 //! # Implementing Custom Event Handlers
 //!
-//! To add custom tracing logic, modify the event handler methods in `TracerConfig`:
+//! To add custom tracing logic, modify the event handler methods in `Tracer`:
 //! - `on_fork_choice_updated`: Called before fork choice updates
 //! - `on_new_payload`: Called before new payload execution
 //! - `on_recv_transaction`: Called when a transaction is received via RPC
@@ -62,4 +62,4 @@ mod tracer;
 pub use blockchain_tracer::handle_canonical_state_stream;
 pub use engine_api_tracer::EngineApiTracer;
 pub use rpc_tracer::{RpcTracerLayer, RpcTracerService};
-pub use tracer::{BlockInfo, TracerConfig};
+pub use tracer::{BlockInfo, Tracer};

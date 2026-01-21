@@ -9,7 +9,7 @@ use payload::XLayerPayloadServiceBuilder;
 use std::sync::Arc;
 use tracing::info;
 use xlayer_engine_api::XLayerEngineApiBuilder;
-use xlayer_full_trace::{EngineApiTracer, RpcTracerLayer, TracerConfig};
+use xlayer_full_trace::{EngineApiTracer, RpcTracerLayer, Tracer};
 
 use op_rbuilder::args::OpRbuilderArgs;
 use reth::{
@@ -85,9 +85,9 @@ fn main() {
             // Build add-ons with RPC middleware and custom Engine API
             // XLayerEngineApiBuilder wraps OpEngineApiBuilder with middleware
             //
-            // TracerConfig is a simple struct with only Args generic, making it easy to share.
-            // It returns Arc<TracerConfig<Args>> directly from new().
-            let tracer_config = TracerConfig::new(xlayer_args.full_trace);
+            // Tracer is a simple struct with only Args generic, making it easy to share.
+            // It returns Arc<Tracer<Args>> directly from new().
+            let tracer_config = Tracer::new(xlayer_args.full_trace);
             let op_engine_builder = OpEngineApiBuilder::<OpEngineValidatorBuilder>::default();
 
             // Use EngineApiTracer as the middleware with built-in event handlers
