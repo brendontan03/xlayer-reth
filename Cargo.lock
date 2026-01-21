@@ -13944,6 +13944,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "xlayer-engine-api"
+version = "0.1.0"
+dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
+ "alloy-rpc-types-engine",
+ "async-trait",
+ "clap",
+ "eyre",
+ "jsonrpsee",
+ "op-alloy-rpc-types-engine",
+ "reth-chainspec",
+ "reth-node-api",
+ "reth-node-builder",
+ "reth-optimism-node",
+ "reth-optimism-rpc",
+ "reth-rpc-api",
+ "reth-storage-api",
+ "reth-transaction-pool",
+ "tracing",
+ "xlayer-monitor",
+]
+
+[[package]]
 name = "xlayer-flashblocks"
 version = "0.1.0"
 dependencies = [
@@ -13985,39 +14009,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xlayer-full-trace"
-version = "0.1.0"
-dependencies = [
- "alloy-consensus",
- "alloy-eips",
- "alloy-primitives",
- "alloy-rpc-types-engine",
- "async-trait",
- "eyre",
- "futures",
- "futures-util",
- "jsonrpsee",
- "op-alloy-rpc-types-engine",
- "reth-chain-state",
- "reth-chainspec",
- "reth-node-api",
- "reth-node-builder",
- "reth-node-core",
- "reth-optimism-node",
- "reth-optimism-rpc",
- "reth-payload-builder",
- "reth-primitives-traits",
- "reth-provider",
- "reth-rpc-api",
- "reth-rpc-engine-api",
- "reth-storage-api",
- "reth-transaction-pool",
- "serde_json",
- "tower",
- "tracing",
-]
-
-[[package]]
 name = "xlayer-legacy-rpc"
 version = "0.1.0"
 dependencies = [
@@ -14027,6 +14018,26 @@ dependencies = [
  "reqwest",
  "serde_json",
  "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
+name = "xlayer-monitor"
+version = "0.1.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "alloy-rpc-types-engine",
+ "clap",
+ "futures",
+ "jsonrpsee",
+ "op-alloy-rpc-types-engine",
+ "reth-chain-state",
+ "reth-node-api",
+ "reth-primitives-traits",
+ "reth-provider",
+ "serde_json",
  "tower",
  "tracing",
 ]
@@ -14088,9 +14099,10 @@ dependencies = [
  "url",
  "uuid",
  "xlayer-chainspec",
+ "xlayer-engine-api",
  "xlayer-flashblocks",
- "xlayer-full-trace",
  "xlayer-legacy-rpc",
+ "xlayer-monitor",
  "xlayer-rpc",
  "xlayer-version",
 ]

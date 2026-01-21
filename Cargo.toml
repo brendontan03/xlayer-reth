@@ -15,10 +15,11 @@ resolver = "2"
 members = [
     "crates/chainspec",
     "crates/flashblocks",
-    "crates/full-trace",
+    "crates/engine-api",
+    "crates/legacy-rpc",
+    "crates/monitor",
     "crates/rpc",
     "crates/tests",
-    "crates/legacy-rpc",
     "crates/version",
 
     "bin/tools",
@@ -63,10 +64,11 @@ codegen-units = 1
 
 xlayer-chainspec = { path = "crates/chainspec" }
 xlayer-flashblocks = { path = "crates/flashblocks" }
-xlayer-full-trace = { path = "crates/full-trace" }
+xlayer-engine-api = { path = "crates/engine-api" }
+xlayer-legacy-rpc = { path = "crates/legacy-rpc" }
+xlayer-monitor = { path = "crates/monitor" }
 xlayer-reth-node = { path = "bin/node" }
 xlayer-rpc = { path = "crates/rpc" }
-xlayer-legacy-rpc = { path = "crates/legacy-rpc" }
 xlayer-version = { path = "crates/version" }
 
 # ==============================================================================
