@@ -11,17 +11,19 @@ repository.workspace = true
 default = []
 
 [dependencies]
-# Internal dependencies
-xlayer-engine-api.workspace = true
-
 # Reth dependencies
 reth-chain-state.workspace = true
 reth-chainspec.workspace = true
 reth-node-api.workspace = true
+reth-node-builder.workspace = true
+reth-node-core.workspace = true
+reth-optimism-node.workspace = true
 reth-optimism-rpc.workspace = true
+reth-payload-builder.workspace = true
 reth-primitives-traits.workspace = true
 reth-provider.workspace = true
 reth-rpc-api.workspace = true
+reth-rpc-engine-api.workspace = true
 reth-storage-api.workspace = true
 reth-transaction-pool.workspace = true
 

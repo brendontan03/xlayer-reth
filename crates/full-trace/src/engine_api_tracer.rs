@@ -13,14 +13,19 @@ use op_alloy_rpc_types_engine::{
     OpExecutionData, OpExecutionPayloadV4, ProtocolVersion, SuperchainSignal,
 };
 use reth_chainspec::EthereumHardforks;
-use reth_node_api::{EngineApiValidator, EngineTypes};
+use reth_node_api::{
+    AddOnsContext, EngineApiValidator, EngineTypes, FullNodeComponents, NodeTypes,
+};
+use reth_node_builder::rpc::{EngineApiBuilder, PayloadValidatorBuilder};
+use reth_optimism_node::OpEngineValidatorBuilder;
 use reth_optimism_rpc::{OpEngineApi, OpEngineApiServer};
 use reth_rpc_api::IntoEngineApiRpcModule;
 use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
 use reth_transaction_pool::TransactionPool;
 use std::{marker::PhantomData, sync::Arc};
-use tracing::trace;
-use xlayer_engine_api::XLayerEngineApiMiddleware;
+use tracing::{info, trace};
+
+use reth_optimism_node::OpEngineApiBuilder;
 
 /// Type alias for the inner OpEngineApi to reduce type complexity.
 type InnerOpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec> =
@@ -425,20 +430,45 @@ where
     }
 }
 
-// Implement XLayerEngineApiMiddleware trait for EngineApiTracer
-impl<Provider, EngineT, Pool, Validator, ChainSpec, Args>
-    XLayerEngineApiMiddleware<Provider, EngineT, Pool, Validator, ChainSpec>
-    for EngineApiTracer<Provider, EngineT, Pool, Validator, ChainSpec, Args>
+// Implement EngineApiBuilder to build EngineApiTracer directly with OpEngineApi
+// This eliminates the need for a separate middleware wrapper crate
+//
+// We use OpEngineValidatorBuilder directly here since we need a concrete type
+impl<N, Args> EngineApiBuilder<N>
+    for EngineApiTracer<
+        N::Provider,
+        <N::Types as NodeTypes>::Payload,
+        N::Pool,
+        <OpEngineValidatorBuilder as PayloadValidatorBuilder<N>>::Validator,
+        <N::Types as NodeTypes>::ChainSpec,
+        Args,
+    >
 where
-    Provider: HeaderProvider + BlockReader + StateProviderFactory + 'static,
-    EngineT: EngineTypes<ExecutionData = OpExecutionData>,
-    Pool: TransactionPool + 'static,
-    Validator: EngineApiValidator<EngineT>,
-    ChainSpec: EthereumHardforks + Send + Sync + 'static,
+    N: FullNodeComponents<
+        Types: NodeTypes<
+            ChainSpec: EthereumHardforks,
+            Payload: EngineTypes<ExecutionData = OpExecutionData>,
+        >,
+    >,
+    N::Provider: HeaderProvider + BlockReader + StateProviderFactory + Clone + Unpin + 'static,
+    N::Pool: TransactionPool + 'static,
+    OpEngineValidatorBuilder: PayloadValidatorBuilder<N>,
+    <OpEngineValidatorBuilder as PayloadValidatorBuilder<N>>::Validator:
+        EngineApiValidator<<N::Types as NodeTypes>::Payload>,
     Args: Clone + Send + Sync + 'static,
 {
-    fn set_inner(&mut self, inner: OpEngineApi<Provider, EngineT, Pool, Validator, ChainSpec>) {
-        // Call the struct's set_inner method
-        EngineApiTracer::set_inner(self, inner);
+    type EngineApi = Self;
+
+    async fn build_engine_api(
+        mut self,
+        ctx: &AddOnsContext<'_, N>,
+    ) -> eyre::Result<Self::EngineApi> {
+        let op_engine_builder = OpEngineApiBuilder::<OpEngineValidatorBuilder>::default();
+        let op_engine_api = op_engine_builder.build_engine_api(ctx).await?;
+
+        info!(target: "xlayer::engine", "XLayer Engine API initialized with tracer middleware");
+
+        self.set_inner(op_engine_api);
+        Ok(self)
     }
 }

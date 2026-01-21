@@ -13944,27 +13944,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xlayer-engine-api"
-version = "0.1.0"
-dependencies = [
- "alloy-eips",
- "alloy-primitives",
- "alloy-rpc-types-engine",
- "async-trait",
- "eyre",
- "jsonrpsee",
- "op-alloy-rpc-types-engine",
- "reth-chainspec",
- "reth-node-api",
- "reth-node-builder",
- "reth-optimism-rpc",
- "reth-rpc-api",
- "reth-storage-api",
- "reth-transaction-pool",
- "tracing",
-]
-
-[[package]]
 name = "xlayer-flashblocks"
 version = "0.1.0"
 dependencies = [
@@ -14022,16 +14001,20 @@ dependencies = [
  "reth-chain-state",
  "reth-chainspec",
  "reth-node-api",
+ "reth-node-builder",
+ "reth-node-core",
+ "reth-optimism-node",
  "reth-optimism-rpc",
+ "reth-payload-builder",
  "reth-primitives-traits",
  "reth-provider",
  "reth-rpc-api",
+ "reth-rpc-engine-api",
  "reth-storage-api",
  "reth-transaction-pool",
  "serde_json",
  "tower",
  "tracing",
- "xlayer-engine-api",
 ]
 
 [[package]]
@@ -14105,7 +14088,6 @@ dependencies = [
  "url",
  "uuid",
  "xlayer-chainspec",
- "xlayer-engine-api",
  "xlayer-flashblocks",
  "xlayer-full-trace",
  "xlayer-legacy-rpc",

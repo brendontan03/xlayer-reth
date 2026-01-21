@@ -15,7 +15,6 @@ workspace = true
 # internal
 xlayer-flashblocks.workspace = true
 xlayer-chainspec.workspace = true
-xlayer-engine-api.workspace = true
 xlayer-full-trace.workspace = true
 xlayer-rpc.workspace = true
 xlayer-legacy-rpc.workspace = true

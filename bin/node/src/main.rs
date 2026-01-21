@@ -8,7 +8,6 @@ use clap::Parser;
 use payload::XLayerPayloadServiceBuilder;
 use std::sync::Arc;
 use tracing::info;
-use xlayer_engine_api::XLayerEngineApiBuilder;
 use xlayer_full_trace::{EngineApiTracer, RpcTracerLayer, Tracer};
 
 use op_rbuilder::args::OpRbuilderArgs;
@@ -17,7 +16,7 @@ use reth::{
     providers::providers::BlockchainProvider,
 };
 use reth_optimism_cli::Cli;
-use reth_optimism_node::{OpEngineApiBuilder, OpEngineValidatorBuilder, OpNode};
+use reth_optimism_node::OpNode;
 
 use op_alloy_network::Optimism;
 use reth::rpc::eth::EthApiTypes;
@@ -83,19 +82,14 @@ fn main() {
             };
 
             // Build add-ons with RPC middleware and custom Engine API
-            // XLayerEngineApiBuilder wraps OpEngineApiBuilder with middleware
+            // EngineApiTracer now directly implements EngineApiBuilder
             //
             // Tracer is a simple struct with only Args generic, making it easy to share.
             // It returns Arc<Tracer<Args>> directly from new().
             let tracer = Tracer::new(xlayer_args.full_trace);
-            let op_engine_builder = OpEngineApiBuilder::<OpEngineValidatorBuilder>::default();
 
-            // Use EngineApiTracer as the middleware with built-in event handlers
-            let xlayer_engine_builder = XLayerEngineApiBuilder::new(op_engine_builder)
-                .with_middleware({
-                    let tracer = tracer.clone();
-                    move || EngineApiTracer::new(tracer)
-                });
+            // Create EngineApiTracer directly - it implements EngineApiBuilder
+            let engine_tracer = EngineApiTracer::new(tracer.clone());
 
             let add_ons = op_node
                 .add_ons()
@@ -103,7 +97,7 @@ fn main() {
                     RpcTracerLayer::new(tracer.clone()),      // Execute first
                     LegacyRpcRouterLayer::new(legacy_config), // Execute second
                 ))
-                .with_engine_api(xlayer_engine_builder);
+                .with_engine_api(engine_tracer);
 
             // Create the XLayer payload service builder
             // It handles both flashblocks and default modes internally

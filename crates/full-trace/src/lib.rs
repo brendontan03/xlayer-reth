@@ -13,7 +13,7 @@
 //! The tracer system is designed around a shared `Tracer<Args>` that holds configuration
 //! and event handlers. This config is shared across multiple tracer components:
 //!
-//! - `EngineApiTracer`: Middleware for Engine API calls
+//! - `EngineApiTracer`: Middleware for Engine API calls (implements `EngineApiBuilder`)
 //! - `RpcTracerLayer`: Tower layer for RPC middleware
 //! - `initialize_blockchain_tracer`: Background task for canonical state monitoring
 //!
@@ -21,23 +21,18 @@
 //!
 //! ```rust,ignore
 //! use xlayer_full_trace::{Tracer, EngineApiTracer, RpcTracerLayer};
-//! use xlayer_engine_api::XLayerEngineApiBuilder;
 //!
 //! // Create a shared tracer configuration (returns Arc<Tracer<Args>>)
 //! let tracer = Tracer::new(xlayer_args.full_trace);
 //!
-//! // Build the Engine API with tracer middleware
-//! let xlayer_engine_builder = XLayerEngineApiBuilder::new(op_engine_builder)
-//!     .with_middleware({
-//!         let config = tracer.clone();
-//!         move || EngineApiTracer::new(config)
-//!     });
+//! // Create Engine API tracer with the shared tracer
+//! let engine_tracer = EngineApiTracer::new(tracer.clone());
 //!
-//! // Add RPC tracing middleware
+//! // Add RPC tracing middleware and Engine API tracer
 //! let add_ons = op_node
 //!     .add_ons()
 //!     .with_rpc_middleware(RpcTracerLayer::new(tracer.clone()))
-//!     .with_engine_api(xlayer_engine_builder);
+//!     .with_engine_api(engine_tracer);
 //!
 //! // Later, in extend_rpc_modules, initialize blockchain tracer
 //! tracer.initialize_blockchain_tracer(ctx.node());
